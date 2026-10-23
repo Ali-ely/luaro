@@ -4,8 +4,36 @@ A turn-based C++ console simulation of a werewolf village, planned for CSCE 1101
 
 ## Status
 
-Planning complete. Implementation has not started and awaits explicit confirmation.
-Repository setup does not authorize starting the implementation milestones.
+M1 is implemented for review: the player hierarchy, all six concrete roles,
+owned dynamic arrays, deep copying, a demonstration, and focused tests.
+The user approved this milestone on 2026-10-24. M2 has not started.
+
+`act(World&)` and Hunter's `onDeath(World&)` are intentionally empty hooks:
+World arrives in M3, and event effects arrive in M4. This is not yet a playable game.
+
+## Build and try M1
+
+On this Windows machine, run from the repository root:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m1.ps1
+```
+
+The script uses g++ from PATH, or the installed Qt MinGW compiler. It builds and
+runs both the tests and the demonstration. The execution-policy option applies
+only to this process; it does not change the machine's settings.
+
+For a standard g++ environment, first create `build/`, then run:
+
+```sh
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp main.cpp -o build/simworld
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp tests/m1_tests.cpp -o build/m1_tests
+./build/m1_tests
+./build/simworld
+```
+
+Read [the M1 walkthrough](docs/M1.md) for the file responsibilities, copy examples,
+and memory-check instructions. Generated executables stay under ignored `build/`.
 
 ## Requirements and scope
 
@@ -71,12 +99,27 @@ testing before advancing.
   missing players. Delete processed events. Commands own their snapshots, and
   undo/history cleanup releases commands and their saved data.
 
-## Decisions to settle before the affected milestone
+## Approved gameplay rules for later milestones
 
-Exact role target-selection rules, remaining phase-specific role actions, voting
-ties, potion limits, round counting, and the boundary between player-edit undo
-and turn execution still need concrete rules. The original F1-F11 specification
-has not been supplied, so its full mapping must not be invented.
+- Start at Night. One turn is one phase; one round is Night followed by Day.
+- Dead players remain inspectable; administrative deletion removes them and does
+  not trigger a Hunter death reaction.
+- Use simple deterministic targeting: role knowledge/suspicion where available,
+  otherwise the lowest eligible ID. No self-voting. Wolves share one night victim.
+- Each Witch has one healing potion and one poison potion. Healing protects a
+  living target, with no resurrection; poison follows the protection rule.
+- Resolve queued events and all death reactions before checking victory. Trigger
+  a Hunter's retaliation only once per elimination.
+- Tied highest vote totals or no valid votes produce no elimination. Count
+  ballots separately from their weighted voting total.
+- Undo covers player-management edits between turns; starting a turn clears that
+  editing history. Turn execution itself is not undoable.
+- An empty world cannot start; if no one survives an event chain, declare a draw.
+- The menu is an administrator view that may reveal roles. Automatic decisions
+  use the knowledge available to the acting role.
+
+The original F1-F11 specification has not been supplied, so the full numbered
+feature mapping must not be invented. Team-member names also remain to be supplied.
 
 ## Validation plan
 
@@ -85,4 +128,6 @@ targets; Hunter death reactions; AlphaWolf voting weight; exact delete/modify un
 events referencing deleted players; repeated undo; invalid input; and both victory
 conditions with matching statistics. Run memory checks over these interactions.
 
-There are no source files or build targets yet.
+M1 tests cover all six roles with empty and populated copies, assignment over
+existing arrays, self-assignment, source destruction, clone independence, growth,
+invalid indices/values, and deletion through `Player*`.
