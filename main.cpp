@@ -24,6 +24,8 @@ AI usage log:
 2026-10-23: Codex helped consolidate the supplied design, gaps, and course limits.
 2026-10-24: User approved M1. Codex implemented the hierarchy, deep copying,
            demonstration, documentation, and ownership tests for user review.
+2026-10-24: User approved M2. Codex added custom array-based Stack and Queue
+           templates, standalone tests/demo, and the M2 walkthrough.
 */
 
 #include "Roles.h"

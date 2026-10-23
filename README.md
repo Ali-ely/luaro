@@ -4,12 +4,37 @@ A turn-based C++ console simulation of a werewolf village, planned for CSCE 1101
 
 ## Status
 
-M1 is implemented for review: the player hierarchy, all six concrete roles,
-owned dynamic arrays, deep copying, a demonstration, and focused tests.
-The user approved this milestone on 2026-10-24. M2 has not started.
+M1 and M2 are implemented: the player hierarchy and all six roles, plus custom
+dynamic-array Stack and Queue templates with independent tests and demonstrations.
+The user approved starting M2 after M1 on 2026-10-24. M2 is ready for review;
+M3 has not started.
 
 `act(World&)` and Hunter's `onDeath(World&)` are intentionally empty hooks:
 World arrives in M3, and event effects arrive in M4. This is not yet a playable game.
+
+## Build and try M2
+
+On this Windows machine, run from the repository root:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m2.ps1
+```
+
+This builds and runs the standalone container tests and demonstration. The script
+uses g++ from PATH or the installed Qt MinGW compiler. It does not change the
+machine's execution policy.
+
+For a standard g++ environment, first create `build/`, then run:
+
+```sh
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. tests/m2_tests.cpp -o build/m2_tests
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. examples/m2_demo.cpp -o build/m2_demo
+./build/m2_tests
+./build/m2_demo
+```
+
+Read [the M2 walkthrough](docs/M2.md) for the container APIs, array growth,
+queue viewing, pointer ownership, and memory checks.
 
 ## Build and try M1
 
@@ -41,7 +66,9 @@ The plan combines the supplied Design, Milestones, and Gaps documents, with the
 Fall 2026 CSCE 1101 handout setting the implementation's complexity level.
 
 - Compile as C++17 with `g++ -std=c++17 -Wall`, without warnings.
-- Separate declarations and definitions into `.h` and `.cpp` files.
+- Separate ordinary class declarations and definitions into `.h` and `.cpp` files.
+  Template definitions stay in `Stack.h` and `Queue.h` so each caller can compile
+  the element type it uses, as anticipated by the design's suggested file list.
 - Use basic classes, inheritance, virtual functions, pointers, dynamic arrays,
   simple templates, loops, and basic `std::string` and `std::vector` operations.
 - Implement the abstract Player -> team -> concrete role hierarchy with Villager,
@@ -131,3 +158,7 @@ conditions with matching statistics. Run memory checks over these interactions.
 M1 tests cover all six roles with empty and populated copies, assignment over
 existing arrays, self-assignment, source destruction, clone independence, growth,
 invalid indices/values, and deletion through `Player*`.
+
+M2 tests cover LIFO/FIFO order, safe empty operations, repeated growth and queue
+wraparound, non-destructive viewing, independent copies, strings and pointer
+values, and cleanup when element copying throws an exception.
