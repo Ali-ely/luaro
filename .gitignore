@@ -1,0 +1,25 @@
+# Build outputs
+build/
+out/
+*.o
+*.obj
+*.exe
+*.out
+*.pdb
+*.ilk
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+
+# Local IDE and operating system files
+.vs/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local credentials
+.env
+.env.*
+!.env.example
