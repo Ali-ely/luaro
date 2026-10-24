@@ -110,7 +110,7 @@ void testSnapshotsAndPositions(Checks& checks) {
         checks.expect(world.findPlayer(copy) == nullptr && description(world.findPlayer(subject)) == saved,
                       "Snapshot ownership independent of duplicate cleanup");
         world.modifyPlayer(subject, "Pending snapshot", false, false);
-        world.removePlayer(subject); // Destructor releases both kinds of saved clone.
+        world.removePlayer(subject);
     }
 }
 

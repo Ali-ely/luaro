@@ -91,8 +91,7 @@ public:
             return false;
         }
         value = items[count - 1];
-        // Release resources held by a removed value, such as a string's storage.
-        // For pointers this only clears the slot; the caller owns the pointee.
+
         items[count - 1] = T();
         --count;
         return true;

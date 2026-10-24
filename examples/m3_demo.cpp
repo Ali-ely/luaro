@@ -4,7 +4,7 @@
 
 int main() {
     World world;
-    // Creation order deliberately differs from night priority order.
+
     world.createPlayer(ALPHA_WOLF_ROLE, "Farah");
     int aliceId = world.createPlayer(VILLAGER_ROLE, "Alice");
     world.createPlayer(WEREWOLF_ROLE, "Elias");
@@ -33,6 +33,6 @@ int main() {
     std::cout << "New player ID: " << newId << " (removed IDs are not reused).\n";
     world.describePlayers();
     std::cout << "\nM3 world demonstration using the current event effects.\n";
-    // World automatically deletes all remaining owned players here.
+
     return 0;
 }

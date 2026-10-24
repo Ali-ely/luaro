@@ -72,7 +72,7 @@ void RevealEvent::describe(std::ostream& output) const { describePair(output, "R
 
 ShootEvent::ShootEvent(int sourceId, int targetId) : Event(sourceId, targetId) { }
 void ShootEvent::apply(World& world) {
-    // Source existence matters; being dead is expected for a Hunter's shot.
+
     if (world.findPlayer(getSourceId()) != nullptr) {
         world.eliminate(getSourceId(), getTargetId(), "Hunter shot", true);
     }

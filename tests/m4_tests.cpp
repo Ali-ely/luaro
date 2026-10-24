@@ -133,11 +133,11 @@ void testHealingAndPotions(Checks& checks) {
 void testNormalNightAndExpiry(Checks& checks) {
     std::ostringstream output;
     World world(output);
-    world.createPlayer(WITCH_ROLE); // The lowest village ID is also the auto-heal target.
+    world.createPlayer(WITCH_ROLE);
     world.createPlayer(VILLAGER_ROLE);
     world.createPlayer(WEREWOLF_ROLE);
     world.createPlayer(ALPHA_WOLF_ROLE);
-    world.createPlayer(VILLAGER_ROLE); // Avoid ending at parity before the expiry test.
+    world.createPlayer(VILLAGER_ROLE);
     checks.expect(world.runTurn() && world.livingPlayerCount() == 5,
                   "Witch self-healing resolves before both wolves' attacks");
     checks.expect(!world.findPlayer(1)->isProtected() && world.pendingEventCount() == 0,
@@ -163,7 +163,7 @@ void testNormalNightAndExpiry(Checks& checks) {
                   && unprotected.livingPlayerCount() == 3,
                   "Multiple wolves share one victim instead of choosing additional victims");
     unprotected.removePlayer(3);
-    unprotected.findPlayer(4)->act(unprotected); // Day does not refresh pack data.
+    unprotected.findPlayer(4)->act(unprotected);
     unprotected.processEvents();
 }
 
@@ -193,7 +193,7 @@ void testRevealsAndKnowledge(Checks& checks) {
     voting.createPlayer(VILLAGER_ROLE);
     voting.createPlayer(WEREWOLF_ROLE);
     voting.enqueueEvent(new RevealEvent(2, 4));
-    voting.runTurn(); // Wolf kills 1; Seer learns wolf 4 and the ordinary inspection of 1.
+    voting.runTurn();
     voting.runTurn();
     checks.expect(voting.voteTotal(4) == 1 && voting.voteTotal(2) == 2,
                   "Seer votes for a known wolf while other villagers use their own knowledge");
@@ -205,7 +205,7 @@ void testVoting(Checks& checks) {
     tied.createPlayer(VILLAGER_ROLE);
     tied.createPlayer(VILLAGER_ROLE);
     tied.runTurn();
-    // M9 ends wolf-free games after Night; an explicit edit reopens Day for tally tests.
+
     tied.modifyPlayer(1, "Villager", true, false);
     tied.runTurn();
     checks.expect(tied.ballotCount() == 2 && tied.voteTotal(1) == 1 && tied.voteTotal(2) == 1
@@ -370,11 +370,11 @@ void testManualValidationAndStress(Checks& checks) {
         for (int i = 0; i < 12; ++i) { simulation.createPlayer(roles[i % 6]); }
         checks.expect(simulation.runTurns(4) > 0 && simulation.pendingEventCount() == 0,
                       "Mixed-role turns drain events and death reactions");
-        simulation.modifyPlayer(4, "Fixture target", true, false); // Reopen if M9 ended the batch.
+        simulation.modifyPlayer(4, "Fixture target", true, false);
         simulation.enqueueEvent(new KillEvent(5, 4));
         simulation.removePlayer(4);
         simulation.processEvents();
-        simulation.enqueueEvent(new RevealEvent(2, 5)); // Destructor must release this pending event.
+        simulation.enqueueEvent(new RevealEvent(2, 5));
     }
 }
 

@@ -56,7 +56,6 @@ try {
         if (!$?) { throw 'Windows memory verification failed.' }
     }
 
-    # Only root production sources: no executables, test mains, or build folders.
     $sourceFiles = Get-ChildItem -LiteralPath $PSScriptRoot -File |
         Where-Object { $_.Extension -in @('.h', '.cpp') } |
         Select-Object -ExpandProperty FullName

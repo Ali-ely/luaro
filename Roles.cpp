@@ -6,8 +6,7 @@
 #include <stdexcept>
 
 namespace {
-// These basic templates are used only with int and the simple records above.
-// All record fields are numbers, booleans, or enums, so copying a field cannot throw.
+
 template <typename T>
 T* copyArray(const T* source, int count) {
     if (count == 0) {
@@ -25,7 +24,7 @@ void appendToArray(T*& entries, int& count, const T& value) {
     if (count == std::numeric_limits<int>::max()) {
         throw std::length_error("The role history is full.");
     }
-    // Allocate and copy before deleting the old array.
+
     T* larger = new T[count + 1];
     for (int i = 0; i < count; ++i) {
         larger[i] = entries[i];
@@ -64,7 +63,7 @@ Villager& Villager::operator=(const Villager& other) {
         try {
             VillageTeam::operator=(other);
         } catch (...) {
-            // Base assignment copies a string, which might fail to allocate.
+
             delete[] copied;
             throw;
         }
@@ -82,7 +81,7 @@ Villager::~Villager() {
 RoleKind Villager::getRole() const { return VILLAGER_ROLE; }
 
 Villager* Villager::clone() const {
-    // The copy constructor preserves the ID; duplication assigns a new ID later.
+
     return new Villager(*this);
 }
 
@@ -147,7 +146,7 @@ Seer& Seer::operator=(const Seer& other) {
         try {
             VillageTeam::operator=(other);
         } catch (...) {
-            // Base assignment copies a string, which might fail to allocate.
+
             delete[] copied;
             throw;
         }
@@ -165,7 +164,7 @@ Seer::~Seer() {
 RoleKind Seer::getRole() const { return SEER_ROLE; }
 
 Seer* Seer::clone() const {
-    // The copy constructor preserves the ID; duplication assigns a new ID later.
+
     return new Seer(*this);
 }
 
@@ -229,7 +228,7 @@ Witch& Witch::operator=(const Witch& other) {
         try {
             VillageTeam::operator=(other);
         } catch (...) {
-            // Base assignment copies a string, which might fail to allocate.
+
             delete[] copied;
             throw;
         }
@@ -247,7 +246,7 @@ Witch::~Witch() {
 RoleKind Witch::getRole() const { return WITCH_ROLE; }
 
 Witch* Witch::clone() const {
-    // The copy constructor preserves the ID; duplication assigns a new ID later.
+
     return new Witch(*this);
 }
 
@@ -297,7 +296,7 @@ Hunter& Hunter::operator=(const Hunter& other) {
         try {
             VillageTeam::operator=(other);
         } catch (...) {
-            // Base assignment copies a string, which might fail to allocate.
+
             delete[] copied;
             throw;
         }
@@ -315,7 +314,7 @@ Hunter::~Hunter() {
 RoleKind Hunter::getRole() const { return HUNTER_ROLE; }
 
 Hunter* Hunter::clone() const {
-    // The copy constructor preserves the ID; duplication assigns a new ID later.
+
     return new Hunter(*this);
 }
 
@@ -360,7 +359,7 @@ Werewolf& Werewolf::operator=(const Werewolf& other) {
         try {
             WolfTeam::operator=(other);
         } catch (...) {
-            // Base assignment copies a string, which might fail to allocate.
+
             delete[] copied;
             throw;
         }
@@ -378,7 +377,7 @@ Werewolf::~Werewolf() {
 RoleKind Werewolf::getRole() const { return WEREWOLF_ROLE; }
 
 Werewolf* Werewolf::clone() const {
-    // The copy constructor preserves the ID; duplication assigns a new ID later.
+
     return new Werewolf(*this);
 }
 
@@ -428,7 +427,7 @@ AlphaWolf& AlphaWolf::operator=(const AlphaWolf& other) {
         try {
             WolfTeam::operator=(other);
         } catch (...) {
-            // Base assignment copies a string, which might fail to allocate.
+
             delete[] copied;
             throw;
         }
@@ -446,7 +445,7 @@ AlphaWolf::~AlphaWolf() {
 RoleKind AlphaWolf::getRole() const { return ALPHA_WOLF_ROLE; }
 
 AlphaWolf* AlphaWolf::clone() const {
-    // The copy constructor preserves the ID; duplication assigns a new ID later.
+
     return new AlphaWolf(*this);
 }
 
@@ -511,7 +510,7 @@ void Villager::setSuspicion(int playerId, int score) {
 
 void Seer::recordInspection(int playerId, RoleKind role) {
     requirePlayerId(playerId);
-    roleName(role); // Validate the role before storing it.
+    roleName(role);
     InspectionResult result = {playerId, role, role == WEREWOLF_ROLE || role == ALPHA_WOLF_ROLE};
     appendToArray(inspectionResults, count, result);
 }

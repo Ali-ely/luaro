@@ -226,7 +226,7 @@ void testInterfaceDestructionAndStress(Checks& checks) {
         world.removePlayer(copy);
         world.undo();
         world.undo();
-        // Destructor must release snapshots, interface subobjects, and pending events.
+
         world.requestInspection(copy, 2);
     }
 }

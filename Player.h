@@ -6,7 +6,6 @@
 
 class World;
 
-// Role labels are stored in inspection records, not used to dispatch turns.
 enum RoleKind {
     VILLAGER_ROLE, SEER_ROLE, WITCH_ROLE, HUNTER_ROLE,
     WEREWOLF_ROLE, ALPHA_WOLF_ROLE
@@ -17,7 +16,7 @@ const char* roleName(RoleKind role);
 // Abstract root for shared identity and flags; virtual actions keep World independent
 // of concrete roles. World assigns IDs, and only duplication changes a cloned ID.
 class Player {
-    friend class World; // Only World may assign a new identity to a duplicate.
+    friend class World;
 private:
     int id;
     std::string name;
@@ -27,7 +26,7 @@ private:
 protected:
     Player(int id, const std::string& name);
     Player(const Player& other);
-    // Protected assignment prevents assigning only the base part through Player*.
+
     Player& operator=(const Player& other);
     void describeCommon(std::ostream& output) const;
 
@@ -51,7 +50,7 @@ public:
     virtual int nightOrder() const;
     virtual int voteWeight() const;
     virtual void onDeath(World& world);
-    // Event delivery uses virtual hooks, without downcasting the recipient.
+
     virtual bool receiveInspection(int targetId, RoleKind role);
     virtual bool spendPotion(int targetId, bool healing);
 };

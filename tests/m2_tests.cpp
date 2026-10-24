@@ -82,7 +82,7 @@ void testQueueOrderAndViewing(Checks& checks) {
     queue.enqueue(2);
     queue.enqueue(3);
     checks.expect(queue.dequeue(value) && value == 1, "Queue removes the oldest item");
-    queue.enqueue(4); // Occupies the slot before first: the array is now wrapped.
+    queue.enqueue(4);
     const Queue<int>& view = queue;
     for (int repetition = 0; repetition < 3; ++repetition) {
         checks.expect(view.at(0) == 2 && view.at(1) == 3 && view.at(2) == 4
@@ -90,7 +90,7 @@ void testQueueOrderAndViewing(Checks& checks) {
     }
     checks.expect(view.peek(value) && value == 2 && queue.size() == 3,
                   "Const queue peek does not remove an item");
-    queue.enqueue(5); // Growth must preserve logical order, not physical array order.
+    queue.enqueue(5);
     for (int i = 2; i <= 5; ++i) {
         checks.expect(queue.dequeue(value) && value == i, "Wrapped growth preserves FIFO order");
     }
@@ -171,7 +171,7 @@ void testQueueCopies(Checks& checks) {
     original.enqueue(first);
     original.enqueue(second);
     original.dequeue(value);
-    original.enqueue(third); // Copy a full, wrapped queue.
+    original.enqueue(third);
     Queue<std::string> copy(original);
     Queue<std::string> assigned(1);
     assigned.enqueue("old");
@@ -270,7 +270,7 @@ void testInvalidInputsAndPointers(Checks& checks) {
                       "Null pointer is a valid queued item");
         checks.expect(stackCopy.peek(result) && result == &ownedElsewhere
                       && queueCopy.at(0) == &ownedElsewhere, "Pointer copies retain their identity");
-        // Nonempty copies are destroyed here. They must not delete ownedElsewhere.
+
     }
     checks.expect(ownedElsewhere == 7, "Containers do not delete borrowed pointer targets");
 }

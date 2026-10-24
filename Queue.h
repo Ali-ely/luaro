@@ -16,7 +16,7 @@ private:
     int first;
 
     int indexAt(int offset) const {
-        // Wrap at the end of the array. This also avoids overflowing first + offset.
+
         int remaining = capacity - first;
         if (offset < remaining) {
             return first + offset;
@@ -83,7 +83,7 @@ public:
     bool isEmpty() const { return count == 0; }
 
     void enqueue(T value) {
-        // Copy the argument before growth, so enqueue(at(0)) is also safe.
+
         if (count == capacity) {
             grow();
         }

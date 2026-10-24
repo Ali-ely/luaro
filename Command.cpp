@@ -14,7 +14,7 @@ DeleteCmd::DeleteCmd(const Player& player, int position)
 DeleteCmd::~DeleteCmd() { delete snapshot; }
 void DeleteCmd::undo(World& world) {
     world.insertForUndo(snapshot, position);
-    snapshot = nullptr; // Ownership transfers only after insertion succeeds.
+    snapshot = nullptr;
 }
 
 ModifyCmd::ModifyCmd(const Player& player, int position)

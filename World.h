@@ -34,7 +34,7 @@ struct KillRecord {
     std::string targetName;
     std::string cause;
     Phase phase;
-    int turnNumber; // Zero marks low-level event processing between turns.
+    int turnNumber;
 };
 
 // Owns the village's players and runs phase-dependent actions polymorphically.
@@ -78,7 +78,6 @@ public:
     explicit World(std::ostream& output);
     ~World();
 
-    // Copying owning pointers would cause double deletion; World is not copyable.
     World(const World& other) = delete;
     World& operator=(const World& other) = delete;
 
@@ -86,7 +85,7 @@ public:
     int createPlayer(RoleKind role, const std::string& name);
     int createPlayer(RoleKind role, const std::string& name, bool alive, bool protectedFlag);
     bool removePlayer(int id);
-    int duplicatePlayer(int id); // Returns 0 for an unknown ID.
+    int duplicatePlayer(int id);
     bool modifyPlayer(int id, const std::string& name, bool alive, bool protectedFlag);
     bool undo();
     int undoCount() const;
@@ -114,7 +113,6 @@ public:
     void reportAction(const Player& player, const std::string& action);
     void reportEvent(const std::string& message);
 
-    // Ownership transfers on entry, including when enqueueing throws.
     void enqueueEvent(Event* event);
     bool addManualEvent(EventKind kind, int sourceId, int targetId);
     bool requestInspection(int sourceId, int targetId);

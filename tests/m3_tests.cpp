@@ -93,7 +93,7 @@ void testEmptyWorldAndValidation(Checks& checks) {
     try { world.createPlayer(VILLAGER_ROLE, " \t"); }
     catch (const std::invalid_argument&) { rejected = true; }
     checks.expect(rejected && world.playerCount() == 0, "Bad name leaves world unchanged");
-    // Six is representable by RoleKind but is not one of the six valid roles.
+
     rejected = false;
     try { world.createPlayer(static_cast<RoleKind>(6), "Invalid"); }
     catch (const std::invalid_argument&) { rejected = true; }
@@ -160,7 +160,7 @@ void testRoleActionsAndTurnOrder(Checks& checks) {
     std::ostringstream output;
     World world(output);
     addMixedRoles(world);
-    // M4 now applies attacks. Preserve the first victim so all six can act on Day.
+
     world.enqueueEvent(new HealEvent(5, 2));
     checks.expect(world.runTurn(), "One night runs successfully");
     std::string night = output.str();
@@ -208,7 +208,6 @@ void testRoleActionsAndTurnOrder(Checks& checks) {
     checks.expect(world.livingPlayerCount() == 5,
                   "All six act before M4 resolves the day elimination");
 
-    // Keep enough village players that M9 victory cannot stop this seven-turn fixture.
     World batch(output);
     for (int i = 0; i < 30; ++i) { batch.createPlayer(VILLAGER_ROLE); }
     batch.createPlayer(WEREWOLF_ROLE);
@@ -230,7 +229,7 @@ void testDeadAndRemovedPlayers(Checks& checks) {
     world.findPlayer(2)->setAlive(false);
     world.removePlayer(3);
     const bool nightRan = world.runTurn();
-    // M9 ends a wolf-free game after Night. An explicit edit reopens this phase fixture.
+
     world.modifyPlayer(1, "Villager", true, false);
     checks.expect(nightRan && world.runTurn(), "Turns run with dead and removed players");
     checks.expect(occurrences(output.str(), "  [5]") == 0
@@ -294,7 +293,7 @@ void testOwnershipAndVectorGrowth(Checks& checks) {
         }
         checks.expect(world.createPlayer(WITCH_ROLE) == 31, "ID allocation continues after many removals");
         checks.expect(world.runTurns(4) == 4, "Remaining players still run after vector growth/removal");
-        // Destruction must release every remaining player and its long name.
+
     }
 }
 

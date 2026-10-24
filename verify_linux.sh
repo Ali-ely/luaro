@@ -9,7 +9,6 @@ core='Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilitie
 for milestone in 1 2 3 4 5 6 7 8 9; do
     sources="$core tests/m${milestone}_tests.cpp"
     if [ "$milestone" = 2 ]; then sources='tests/m2_tests.cpp'; fi
-    # Source names are fixed project paths without spaces; split this list deliberately.
     g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. -g -fsanitize=address,undefined -fno-omit-frame-pointer $sources -o "build/linux/m${milestone}_asan"
     ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 "build/linux/m${milestone}_asan"
     g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. -g $sources -o "build/linux/m${milestone}_tests"

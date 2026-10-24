@@ -86,7 +86,7 @@ bool Console::managePlayer(int choice) {
         world.modifyPlayer(id, name, alive, protection);
         output << "Modified player " << id << ".\n";
     } else {
-        player->describe(output); // Administrator details, including dead players.
+        player->describe(output);
     }
     return true;
 }
@@ -136,7 +136,7 @@ bool Console::perform(int choice) {
         case 4: world.runTurn(); break;
         case 5: {
             int count = 0;
-            // Bound a console batch so a huge but valid int cannot monopolize it.
+
             if (!readInteger("Number of turns (1-1000): ", 1, 1000, count)) { return false; }
             const int completed = world.runTurns(count);
             output << "Completed " << completed << " turn(s).\n";

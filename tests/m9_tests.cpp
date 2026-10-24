@@ -196,7 +196,7 @@ void testWeightedAndCumulativeVotes(Checks& checks) {
     world.addManualEvent(VOTE_EVENT, 2, 3);
     world.addManualEvent(VOTE_EVENT, 3, 2);
     world.addManualEvent(VOTE_EVENT, 4, 3);
-    world.addManualEvent(VOTE_EVENT, 3, 2); // Both this and the automatic duplicate must be ignored.
+    world.addManualEvent(VOTE_EVENT, 3, 2);
     world.runTurn();
     checks.expect(world.getTotalBallots() == 4 && world.getTotalVoteWeight() == 5
                   && world.ballotCount() == 4, "Accepted ballots counted separately from AlphaWolf's weight");
@@ -244,9 +244,9 @@ void testHistoryRetentionAndIgnoredActions(Checks& checks) {
     world.createPlayer(VILLAGER_ROLE, "Original Victim");
     world.createPlayer(WEREWOLF_ROLE, "Original Wolf");
     world.requestPotion(1, 1, true);
-    world.enqueueEvent(new KillEvent(3, 1)); // Protected, no death.
+    world.enqueueEvent(new KillEvent(3, 1));
     world.enqueueEvent(new KillEvent(3, 2));
-    world.enqueueEvent(new KillEvent(3, 2)); // Duplicate target, no second death.
+    world.enqueueEvent(new KillEvent(3, 2));
     world.processEvents();
     checks.expect(world.killCount() == 1 && world.killAt(0).turnNumber == 0,
                   "Protected, dead-target, and duplicate attacks excluded from history");
@@ -337,7 +337,7 @@ void testStress(Checks& checks) {
         world.describeStatistics();
         int id = world.createPlayer(VILLAGER_ROLE, "Reopen");
         world.modifyPlayer(id, "Snapshot", true, false);
-        world.removePlayer(id); // Destruction releases snapshots and string-rich kill history.
+        world.removePlayer(id);
     }
 }
 

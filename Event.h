@@ -5,7 +5,6 @@
 
 class World;
 
-// Choices exposed by the manual event menu; Hunter shots are generated on death.
 enum EventKind { KILL_EVENT, HEAL_EVENT, VOTE_EVENT, REVEAL_EVENT, POISON_EVENT };
 
 // An owned, polymorphic action containing IDs rather than borrowed player pointers.

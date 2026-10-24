@@ -107,7 +107,7 @@ two user-selected optional capabilities use checked dynamic_cast.
 | F11: own feature | Victory/draw checks, cumulative votes, named elimination history |
 
 The complete design report, assumptions, feature map, team details, compilation
-instructions, and accurate AI disclosure are also in main.cpp's header comment.
+instructions, and accurate AI disclosure are in [the project report](docs/PROJECT.md).
 Class comments explain responsibility and hierarchy placement. The F1-F11 labels
 were verified against the local SimWorld assignment handout.
 

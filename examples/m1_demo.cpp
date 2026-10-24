@@ -16,7 +16,6 @@ int main() {
     AlphaWolf alpha(6, "Farah");
     alpha.addPackMember(5);
 
-    // These pointers borrow stack objects; they must not be deleted.
     Player* players[] = {&villager, &seer, &witch, &hunter, &wolf, &alpha};
     std::cout << "M1: all six roles, described through Player pointers\n";
     for (int i = 0; i < 6; ++i) {
@@ -29,7 +28,7 @@ int main() {
     copy->setSuspicion(5, 99);
     villager.describe(std::cout);
     copy->describe(std::cout);
-    // Unlike the borrowed pointers above, clone() returns a new owned object.
+
     Player* ownedCopy = copy;
     delete ownedCopy;
 

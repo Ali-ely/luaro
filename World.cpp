@@ -46,7 +46,7 @@ int World::createPlayer(RoleKind role, const std::string& name, bool alive, bool
     }
 
     Player* player = nullptr;
-    // Role selection is confined to construction, never the normal turn loop.
+
     switch (role) {
         case VILLAGER_ROLE: player = new Villager(nextId, name); break;
         case SEER_ROLE: player = new Seer(nextId, name); break;
@@ -74,7 +74,7 @@ int World::createPlayer(RoleKind role, const std::string& name, bool alive, bool
     }
 
     int assignedId = nextId;
-    // Zero is an exhausted-ID marker, never a player ID. Removed IDs are not reused.
+
     if (nextId == std::numeric_limits<int>::max()) {
         nextId = 0;
     } else {
@@ -92,7 +92,7 @@ int World::duplicatePlayer(int id) {
     if (source == nullptr) { return 0; }
     if (nextId == 0) { throw std::overflow_error("No player IDs remain."); }
     Player* copy = source->clone();
-    copy->id = nextId; // clone itself preserves identity for future undo snapshots.
+    copy->id = nextId;
     try { remember(new DuplicateCmd(nextId)); }
     catch (...) { delete copy; throw; }
     try { players.push_back(copy); }
@@ -121,7 +121,7 @@ bool World::modifyPlayer(int id, const std::string& name, bool alive, bool prote
     int position = 0;
     while (players[position] != player) { ++position; }
     remember(new ModifyCmd(*player, position));
-    // If string validation/allocation fails, remove only this attempted edit.
+
     try { player->setName(name); }
     catch (...) {
         Command* command = nullptr;
@@ -142,7 +142,7 @@ bool World::removePlayer(int id) {
     for (int i = 0; i < playerCount(); ++i) {
         if (players[i]->getId() == id) {
             remember(new DeleteCmd(*players[i], i));
-            // Administrative removal is not a gameplay death: do not call onDeath.
+
             delete players[i];
             players.erase(players.begin() + i);
             result = GAME_ONGOING;
@@ -180,7 +180,7 @@ bool World::undo() {
         output << "Nothing to undo.\n";
         return false;
     }
-    // Keep the command on the stack if output or restoration fails.
+
     output << "Undo last player edit.\n";
     command->undo(*this);
     history.pop(command);
@@ -243,7 +243,7 @@ const Player* World::playerAt(int index) const {
 }
 
 int World::playerCount() const {
-    // The positive int ID range also bounds the maximum number of players.
+
     return static_cast<int>(players.size());
 }
 
@@ -338,7 +338,7 @@ bool World::runTurn() {
         throw std::overflow_error("The turn counter is full.");
     }
 
-    discardHistory(); // Gameplay cannot be undone as a player-management edit.
+    discardHistory();
     runningTurn = true;
     try {
         output << "Turn " << completedTurns + 1 << " - "
@@ -346,8 +346,7 @@ bool World::runTurn() {
         if (phase == NIGHT) {
             ballots.clear();
             packTargetId = -1;
-            // Current roles use priorities 0, 1, and 2. Keep insertion order within
-            // each group; do not reorder the owning vector or inspect role types.
+
             for (int priority = 0; priority <= 2; ++priority) {
                 for (int i = 0; i < playerCount(); ++i) {
                     Player* player = players[i];
@@ -367,7 +366,7 @@ bool World::runTurn() {
         processEvents();
         if (phase == DAY) {
             tallyVotes();
-            // Tally elimination may enqueue a Hunter shot, including chain reactions.
+
             processEvents();
         } else {
             clearProtection();
@@ -380,7 +379,7 @@ bool World::runTurn() {
     ++completedTurns;
     phase = phase == NIGHT ? DAY : NIGHT;
     runningTurn = false;
-    checkVictory(); // All queued actions, tally eliminations, and Hunter chains are done.
+    checkVictory();
     if (isFinished()) { describeStatistics(); }
     return true;
 }
@@ -416,7 +415,7 @@ void World::enqueueEvent(Event* event) {
         throw std::invalid_argument("Cannot enqueue a null event.");
     }
     if (isFinished()) {
-        delete event; // The ownership-transfer promise also applies to rejection.
+        delete event;
         throw std::logic_error("Game finished. Make a player edit before adding events.");
     }
     try {
@@ -450,7 +449,7 @@ void World::processEvents() {
     if (resolvingEvents) {
         throw std::logic_error("Events are already being resolved.");
     }
-    // This low-level helper can also apply gameplay outside runTurn.
+
     if (!events.isEmpty()) { discardHistory(); }
     resolvingEvents = true;
     Event* event = nullptr;
@@ -494,7 +493,7 @@ bool World::addManualEvent(EventKind kind, int sourceId, int targetId) {
         reportEvent("Not queued: only healing can target its source.");
         return false;
     }
-    // These are manual-menu validations, not role dispatch in a normal turn.
+
     switch (kind) {
         case KILL_EVENT:
             if (phase == NIGHT) { enqueueEvent(new KillEvent(sourceId, targetId)); return true; }
@@ -536,7 +535,7 @@ bool World::requestInspection(int sourceId, int targetId) {
         reportEvent("Unknown player ID.");
         return false;
     }
-    // Only user-selected optional capabilities use checked runtime casts.
+
     Inspector* inspector = dynamic_cast<Inspector*>(source);
     if (inspector == nullptr) {
         reportEvent("This player cannot inspect.");
@@ -601,7 +600,7 @@ bool World::recordVote(int voterId, int targetId) {
     }
     for (int i = 0; i < ballotCount(); ++i) {
         if (ballots[i].voterId == voterId) {
-            return false; // First valid ballot wins, including a manual override.
+            return false;
         }
     }
     Ballot ballot = {voterId, targetId, voter->voteWeight()};
@@ -667,8 +666,8 @@ bool World::eliminate(int sourceId, int targetId, const std::string& cause, bool
         : (source == nullptr ? "Unknown source" : source->getName());
     KillRecord record = {sourceId, targetId, sourceName, target->getName(), cause,
                          phase, runningTurn ? completedTurns + 1 : 0};
-    kills.push_back(record); // Allocate history before committing the actual death.
-    target->setAlive(false); // Set this before the hook so repeated attacks cannot repeat it.
+    kills.push_back(record);
+    target->setAlive(false);
     target->onDeath(*this);
     reportEvent("Player " + std::to_string(targetId) + " died by " + cause
                 + " (source " + std::to_string(sourceId) + ").");

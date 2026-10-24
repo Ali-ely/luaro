@@ -96,7 +96,7 @@ void testVillager(Checks& checks) {
     }
     checks.expect(survivingClone->getSuspicion(0).score == 7,
                   "Villager: clone survives source destruction");
-    // Delete through the abstract base to exercise virtual destruction.
+
     Player* base = survivingClone;
     delete base;
 
@@ -191,7 +191,7 @@ void testSeer(Checks& checks) {
     }
     checks.expect(survivingClone->getInspection(0).role == WEREWOLF_ROLE,
                   "Seer: clone survives source destruction");
-    // Delete through the abstract base to exercise virtual destruction.
+
     Player* base = survivingClone;
     delete base;
 
@@ -286,7 +286,7 @@ void testWitch(Checks& checks) {
     }
     checks.expect(survivingClone->getPotionUse(0).targetId == 20,
                   "Witch: clone survives source destruction");
-    // Delete through the abstract base to exercise virtual destruction.
+
     Player* base = survivingClone;
     delete base;
 
@@ -381,7 +381,7 @@ void testHunter(Checks& checks) {
     }
     checks.expect(survivingClone->getShot(0) == 20,
                   "Hunter: clone survives source destruction");
-    // Delete through the abstract base to exercise virtual destruction.
+
     Player* base = survivingClone;
     delete base;
 
@@ -476,7 +476,7 @@ void testWerewolf(Checks& checks) {
     }
     checks.expect(survivingClone->getTarget(0) == 20,
                   "Werewolf: clone survives source destruction");
-    // Delete through the abstract base to exercise virtual destruction.
+
     Player* base = survivingClone;
     delete base;
 
@@ -571,7 +571,7 @@ void testAlphaWolf(Checks& checks) {
     }
     checks.expect(survivingClone->getPackMember(0) == 20,
                   "AlphaWolf: clone survives source destruction");
-    // Delete through the abstract base to exercise virtual destruction.
+
     Player* base = survivingClone;
     delete base;
 
@@ -772,7 +772,7 @@ void runTests(Checks& checks) {
 
 int main() {
     Checks checks;
-    // Warm up standard I/O before optional Windows debug-heap measurements.
+
     std::cout << "Running M1 ownership and copying tests...\n";
 #if defined(_MSC_VER) && defined(_DEBUG)
     _CrtMemState before;

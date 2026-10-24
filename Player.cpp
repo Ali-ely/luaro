@@ -30,7 +30,7 @@ Player::Player(const Player& other)
 
 Player& Player::operator=(const Player& other) {
     if (this != &other) {
-        // Copy the string first: if allocation fails, other fields stay unchanged.
+
         name = other.name;
         id = other.id;
         alive = other.alive;
@@ -78,7 +78,7 @@ int Player::nightOrder() const { return 2; }
 int Player::voteWeight() const { return 1; }
 
 void Player::onDeath(World&) {
-    // Most players have no death reaction. Hunter overrides this hook.
+
 }
 
 bool Player::receiveInspection(int, RoleKind) { return false; }
