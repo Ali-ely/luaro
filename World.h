@@ -48,7 +48,10 @@ public:
 
     int createPlayer(RoleKind role);
     int createPlayer(RoleKind role, const std::string& name);
+    int createPlayer(RoleKind role, const std::string& name, bool alive, bool protectedFlag);
     bool removePlayer(int id);
+    int duplicatePlayer(int id); // Returns 0 for an unknown ID.
+    bool modifyPlayer(int id, const std::string& name, bool alive, bool protectedFlag);
     Player* findPlayer(int id);
     const Player* findPlayer(int id) const;
     const Player* playerAt(int index) const;

@@ -27,11 +27,18 @@ int World::createPlayer(RoleKind role) {
 }
 
 int World::createPlayer(RoleKind role, const std::string& name) {
+    return createPlayer(role, name, true, false);
+}
+
+int World::createPlayer(RoleKind role, const std::string& name, bool alive, bool protectedFlag) {
     if (runningTurn || resolvingEvents) {
         throw std::logic_error("Players cannot be created during a turn.");
     }
     if (nextId == 0) {
         throw std::overflow_error("No player IDs remain.");
+    }
+    if (!alive && protectedFlag) {
+        throw std::invalid_argument("A dead player cannot be protected.");
     }
 
     Player* player = nullptr;
@@ -46,6 +53,8 @@ int World::createPlayer(RoleKind role, const std::string& name) {
         default: throw std::invalid_argument("Unknown role.");
     }
     try {
+        player->setAlive(alive);
+        player->setProtected(protectedFlag);
         players.push_back(player);
     } catch (...) {
         delete player;
@@ -60,6 +69,38 @@ int World::createPlayer(RoleKind role, const std::string& name) {
         ++nextId;
     }
     return assignedId;
+}
+
+int World::duplicatePlayer(int id) {
+    if (runningTurn || resolvingEvents) {
+        throw std::logic_error("Players cannot be duplicated during a turn.");
+    }
+    const Player* source = findPlayer(id);
+    if (source == nullptr) { return 0; }
+    if (nextId == 0) { throw std::overflow_error("No player IDs remain."); }
+    Player* copy = source->clone();
+    copy->id = nextId; // clone itself preserves identity for future undo snapshots.
+    try { players.push_back(copy); }
+    catch (...) { delete copy; throw; }
+    const int assignedId = nextId;
+    nextId = nextId == std::numeric_limits<int>::max() ? 0 : nextId + 1;
+    return assignedId;
+}
+
+bool World::modifyPlayer(int id, const std::string& name, bool alive, bool protectedFlag) {
+    if (runningTurn || resolvingEvents) {
+        throw std::logic_error("Players cannot be modified during a turn.");
+    }
+    Player* player = findPlayer(id);
+    if (player == nullptr) { return false; }
+    if (!alive && protectedFlag) {
+        throw std::invalid_argument("A dead player cannot be protected.");
+    }
+    // Validate/assign the possibly throwing string first, before changing flags.
+    player->setName(name);
+    player->setAlive(alive);
+    player->setProtected(protectedFlag);
+    return true;
 }
 
 bool World::removePlayer(int id) {

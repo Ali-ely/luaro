@@ -4,9 +4,29 @@ A turn-based C++ console simulation of a werewolf village, planned for CSCE 1101
 
 ## Status
 
-M1 through M4 are implemented: players, containers, World turns, and event effects.
-M4 adds attacks, protection, poison, inspections, weighted votes, and Hunter
-retaliation. M5 has not started.
+M1 through M5 are implemented: players, containers, World turns, event effects,
+and player management. M5 adds default/custom creation, deletion, duplication
+with new IDs, and validated edits. M6 undo has not started.
+
+## Build and try M5
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m5.ps1
+```
+
+Add `-Interactive` to open the menu after testing. Options 6-9 create, delete,
+duplicate, and modify players. The unattended demo duplicates a Seer with
+inspection history, edits the copy, and deletes it while preserving the original.
+Read [the M5 walkthrough](docs/M5.md) for the API and a step-by-step menu exercise.
+
+For standard g++, create `build/` and run:
+
+```sh
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp main.cpp -o build/simworld
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp tests/m5_tests.cpp -o build/m5_tests
+./build/m5_tests
+./build/simworld
+```
 
 ## Build and try M4
 
@@ -16,8 +36,9 @@ Run the tests and unattended demonstration:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m4.ps1
 ~~~
 
-Add -Interactive to open the event menu after testing. It lists players, views
-pending events, adds manual events, and runs one or several turns.
+Add -Interactive to open the current menu after testing. It lists players, views
+pending events, adds manual events, and runs one or several turns. Since M5 the
+same application also includes player-management options.
 
 For standard g++, create build/ and run:
 

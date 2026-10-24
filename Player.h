@@ -16,6 +16,7 @@ const char* roleName(RoleKind role);
 
 // Abstract owner of the state shared by every player. World will assign IDs.
 class Player {
+    friend class World; // Only World may assign a new identity to a duplicate.
 private:
     int id;
     std::string name;
