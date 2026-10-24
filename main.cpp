@@ -1,5 +1,5 @@
 /*
-Loup-Garou SimWorld - M7: optional inspection and potion capabilities.
+Loup-Garou SimWorld - M8: complete console menu and safe input.
 Team members: names have not yet been supplied.
 World: a village simulation with alternating Night and Day turns.
 
@@ -18,8 +18,8 @@ F11: win detection and statistics are planned for M9.
 The complete original numbered specification is needed to verify other labels.
 
 Build from the repository root (create build/ first):
-g++ -std=c++17 -Wall Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp main.cpp -o build/simworld
-Tests: see README.md and tests/m1_tests.cpp through tests/m7_tests.cpp.
+g++ -std=c++17 -Wall Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp main.cpp -o build/simworld
+Tests: see README.md and tests/m1_tests.cpp through tests/m8_tests.cpp.
 
 AI usage log:
 2026-10-23: Codex helped consolidate the supplied design, gaps, and course limits.
@@ -33,196 +33,65 @@ AI usage log:
 2026-10-24: User approved M5. Codex added player management and validation tests.
 2026-10-24: User approved M6. Codex added undo commands, snapshot ownership, tests, and docs.
 2026-10-24: User approved M7. Codex added capability interfaces, checked casts, menu actions, and tests.
+2026-10-24: User approved M8. Codex added the Console class, validated prompts, details view, and menu tests.
 */
 
-
-
-
-#include "World.h"
+#include "Console.h"
 #include <iostream>
 #include <exception>
 #include <sstream>
-#include <stdexcept>
 #include <string>
-
-// Read a complete line, rejecting overflow and trailing garbage.
-bool readInteger(const std::string& prompt, int& value) {
-    std::string line;
-    while (true) {
-        std::cout << prompt;
-        if (!std::getline(std::cin, line)) { return false; }
-        std::istringstream input(line);
-        char extra;
-        if ((input >> value) && !(input >> extra)) { return true; }
-        std::cout << "Enter one whole number within the int range.\n";
-    }
-}
-
-// Return false on EOF; throw for invalid values before any World mutation.
-bool readPlayerValues(std::string& name, bool& alive, bool& protection) {
-    std::cout << "Name: ";
-    if (!std::getline(std::cin, name)) { return false; }
-    int aliveInput, protectedInput;
-    if (!readInteger("Alive (0/1): ", aliveInput) ||
-        !readInteger("Protected (0/1): ", protectedInput)) { return false; }
-    if ((aliveInput != 0 && aliveInput != 1) ||
-        (protectedInput != 0 && protectedInput != 1)) {
-        throw std::invalid_argument("Flags must be 0 or 1.");
-    }
-    alive = aliveInput == 1;
-    protection = protectedInput == 1;
-    return true;
-}
-
-bool managePlayer(World& world, int choice) {
-    if (choice == 6) {
-        int role, mode;
-        std::cout << "1 Villager, 2 Seer, 3 Witch, 4 Hunter, 5 Werewolf, 6 AlphaWolf\n";
-        if (!readInteger("Role: ", role)) { return false; }
-        if (role < 1 || role > 6) { throw std::invalid_argument("Choose a role from 1 to 6."); }
-        if (!readInteger("1 Defaults, 2 Custom values: ", mode)) { return false; }
-        int id;
-        if (mode == 1) { id = world.createPlayer(static_cast<RoleKind>(role - 1)); }
-        else if (mode == 2) {
-            std::string name;
-            bool alive, protection;
-            if (!readPlayerValues(name, alive, protection)) { return false; }
-            id = world.createPlayer(static_cast<RoleKind>(role - 1), name, alive, protection);
-        } else { throw std::invalid_argument("Choose creation mode 1 or 2."); }
-        std::cout << "Created player " << id << ".\n";
-    } else {
-        int id;
-        if (!readInteger("Player ID: ", id)) { return false; }
-        if (world.findPlayer(id) == nullptr) {
-            std::cout << "Unknown player ID.\n";
-            return true;
-        }
-        if (choice == 7) {
-            world.removePlayer(id);
-            std::cout << "Deleted player " << id << ".\n";
-        } else if (choice == 8) {
-            std::cout << "Duplicate created with ID " << world.duplicatePlayer(id) << ".\n";
-        } else {
-            std::string name;
-            bool alive, protection;
-            if (!readPlayerValues(name, alive, protection)) { return false; }
-            world.modifyPlayer(id, name, alive, protection);
-            std::cout << "Modified player " << id << ".\n";
-        }
-    }
-    return true;
-}
-
-void runEventMenu(World& world) {
-    int choice;
-    while (true) {
-        std::cout << "\nM7 players and events | Next phase: "
-                  << (world.getPhase() == NIGHT ? "Night" : "Day")
-                  << " | Undoable edits: " << world.undoCount()
-                  << "\n1 List players\n2 View pending events\n3 Add event\n"
-                  << "4 Run one turn\n5 Run several turns\n6 Create player\n"
-                  << "7 Delete player\n8 Duplicate player\n9 Modify player\n10 Undo\n"
-                  << "11 Inspect using a player\n12 Use a potion\n0 Quit\n";
-        if (!readInteger("Choice: ", choice) || choice == 0) { return; }
-        if (choice == 1) { world.describePlayers(); }
-        else if (choice == 2) { world.viewPendingEvents(); }
-        else if (choice == 3) {
-            int kind, source, target;
-            std::cout << "1 Kill, 2 Heal, 3 Vote, 4 Reveal, 5 Poison\n";
-            if (!readInteger("Event: ", kind)) { return; }
-            if (kind < 1 || kind > 5) {
-                std::cout << "Choose an event from 1 to 5.\n";
-                continue;
-            }
-            if (!readInteger("Source ID: ", source) ||
-                !readInteger("Target ID: ", target)) { return; }
-            if (world.addManualEvent(static_cast<EventKind>(kind - 1), source, target)) {
-                std::cout << "Event queued. Run a turn to apply it.\n";
-            }
-        }
-        else if (choice == 4) { world.runTurn(); }
-        else if (choice == 5) {
-            int count;
-            if (!readInteger("Number of turns: ", count)) { return; }
-            if (count <= 0) { std::cout << "Enter a positive turn count.\n"; }
-            else {
-                try { world.runTurns(count); }
-                catch (const std::exception& error) {
-                    std::cout << "Could not finish turns: " << error.what() << '\n';
-                }
-            }
-        }
-        else if (choice >= 6 && choice <= 9) {
-            try { if (!managePlayer(world, choice)) { return; } }
-            catch (const std::exception& error) { std::cout << "Player action failed: " << error.what() << '\n'; }
-        }
-        else if (choice == 10) {
-            try { world.undo(); }
-            catch (const std::exception& error) { std::cout << "Undo failed: " << error.what() << '\n'; }
-        }
-        else if (choice == 11 || choice == 12) {
-            int source, target, potion = 1;
-            if (!readInteger("Acting player ID: ", source) ||
-                !readInteger("Target ID: ", target)) { return; }
-            if (choice == 12) {
-                if (!readInteger("1 Heal, 2 Poison: ", potion)) { return; }
-                if (potion != 1 && potion != 2) {
-                    std::cout << "Choose potion 1 or 2.\n";
-                    continue;
-                }
-            }
-            try {
-                const bool queued = choice == 11 ? world.requestInspection(source, target)
-                    : world.requestPotion(source, target, potion == 1);
-                if (queued) { std::cout << "Special action queued. Run a turn to apply it.\n"; }
-            } catch (const std::exception& error) {
-                std::cout << "Special action failed: " << error.what() << '\n';
-            }
-        }
-        else { std::cout << "Choose a menu option from 0 to 12.\n"; }
-    }
-}
-
 
 int main(int argc, char* argv[]) {
     if (argc > 2 || (argc == 2 && std::string(argv[1]) != "--demo")) {
         std::cerr << "Usage: simworld [--demo]\n";
         return 1;
     }
-    World world;
-    world.createPlayer(WITCH_ROLE, "Clara");
-    world.createPlayer(SEER_ROLE, "Basil");
-    world.createPlayer(VILLAGER_ROLE, "Alice");
-    world.createPlayer(HUNTER_ROLE, "Dalia");
-    world.createPlayer(WEREWOLF_ROLE, "Elias");
-    world.createPlayer(ALPHA_WOLF_ROLE, "Farah");
-    world.createPlayer(VILLAGER_ROLE, "Gamal");
-    world.createPlayer(VILLAGER_ROLE, "Hana");
-    world.clearUndoHistory(); // The sample village is setup, not an administrator edit.
-    if (argc == 2) {
-        world.describePlayers();
-        world.requestInspection(3, 5); // Unsupported capabilities fail safely.
-        world.requestPotion(3, 5, true);
-        world.requestInspection(2, 5);
-        world.requestPotion(1, 1, true);
-        world.requestPotion(1, 5, false);
-        world.viewPendingEvents();
-        world.runTurns(2);
-        world.viewPendingEvents();
-        int duplicateId = world.duplicatePlayer(2);
-        std::cout << "Duplicated Seer 2 as " << duplicateId << ".\n";
-        world.modifyPlayer(duplicateId, "Basil copy", true, false);
-        world.findPlayer(2)->describe(std::cout);
-        world.findPlayer(duplicateId)->describe(std::cout);
-        world.removePlayer(duplicateId);
-        std::cout << "Undo delete, modify, and duplicate, newest first:\n";
-        world.undo();
-        world.findPlayer(duplicateId)->describe(std::cout);
-        world.undo();
-        world.findPlayer(duplicateId)->describe(std::cout);
-        world.undo();
-        world.undo(); // Safe empty-history demonstration.
-        world.describePlayers();
-    } else { runEventMenu(world); }
+    try {
+        World world;
+        world.createPlayer(WITCH_ROLE, "Clara");
+        world.createPlayer(SEER_ROLE, "Basil");
+        world.createPlayer(VILLAGER_ROLE, "Alice");
+        world.createPlayer(HUNTER_ROLE, "Dalia");
+        world.createPlayer(WEREWOLF_ROLE, "Elias");
+        world.createPlayer(ALPHA_WOLF_ROLE, "Farah");
+        world.createPlayer(VILLAGER_ROLE, "Gamal");
+        world.createPlayer(VILLAGER_ROLE, "Hana");
+        world.clearUndoHistory(); // The sample village is setup, not an administrator edit.
+        if (argc == 2) {
+            world.describePlayers();
+            world.requestInspection(3, 5); // Unsupported capabilities fail safely.
+            world.requestPotion(3, 5, true);
+            world.requestInspection(2, 5);
+            world.requestPotion(1, 1, true);
+            world.requestPotion(1, 5, false);
+            world.viewPendingEvents();
+            world.runTurns(2);
+            world.viewPendingEvents();
+            int duplicateId = world.duplicatePlayer(2);
+            std::cout << "Duplicated Seer 2 as " << duplicateId << ".\n";
+            world.modifyPlayer(duplicateId, "Basil copy", true, false);
+            world.findPlayer(2)->describe(std::cout);
+            world.findPlayer(duplicateId)->describe(std::cout);
+            world.removePlayer(duplicateId);
+            std::cout << "Undo delete, modify, and duplicate, newest first:\n";
+            world.undo();
+            world.findPlayer(duplicateId)->describe(std::cout);
+            world.undo();
+            world.findPlayer(duplicateId)->describe(std::cout);
+            world.undo();
+            world.undo(); // Safe empty-history demonstration.
+            world.describePlayers();
+            std::istringstream demoInput("13\n2\n0\n");
+            Console console(world, demoInput, std::cout);
+            console.run();
+        } else {
+            Console console(world, std::cin, std::cout);
+            console.run();
+        }
+    } catch (const std::exception& error) {
+        std::cerr << "Unable to continue: " << error.what() << '\n';
+        return 1;
+    }
     return 0;
 }

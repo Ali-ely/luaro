@@ -4,9 +4,30 @@ A turn-based C++ console simulation of a werewolf village, planned for CSCE 1101
 
 ## Status
 
-M1 through M7 are implemented: players, containers, World turns, event effects,
-player management, multi-level undo, and optional inspection/potion capabilities.
-M8 completes the menu and input handling.
+M1 through M8 are implemented, including the complete console menu, player
+management, undo, events, and optional inspection/potion capabilities. M9 adds
+win conditions and complete game statistics.
+
+## Build and try M8
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m8.ps1
+```
+
+Add `-Interactive` to use the console after testing. Options **1-12** keep their
+existing actions; **13** shows one player's complete details. All prompts now
+re-prompt for invalid values, and EOF exits safely. A menu batch allows 1-1,000
+turns. The current phase, completed turns/rounds, and undo count appear above
+the menu. Read [the M8 walkthrough](docs/M8.md) for the full command table.
+
+For standard g++, create `build/` and run:
+
+```sh
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp main.cpp -o build/simworld
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp tests/m8_tests.cpp -o build/m8_tests
+./build/m8_tests
+./build/simworld
+```
 
 ## Build and try M7
 
@@ -23,7 +44,7 @@ Read [the M7 walkthrough](docs/M7.md) for the checked casts and a menu exercise.
 For standard g++, create `build/` and run:
 
 ```sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp main.cpp -o build/simworld
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp main.cpp -o build/simworld
 g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp tests/m7_tests.cpp -o build/m7_tests
 ./build/m7_tests
 ./build/simworld
@@ -44,7 +65,7 @@ Read [the M6 walkthrough](docs/M6.md) for ownership, restoration, and a menu exe
 For standard g++, create `build/` and run:
 
 ```sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp main.cpp -o build/simworld
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp main.cpp -o build/simworld
 g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp tests/m6_tests.cpp -o build/m6_tests
 ./build/m6_tests
 ./build/simworld
@@ -64,7 +85,7 @@ Read [the M5 walkthrough](docs/M5.md) for the API and a step-by-step menu exerci
 For standard g++, create `build/` and run:
 
 ```sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp main.cpp -o build/simworld
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp main.cpp -o build/simworld
 g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp tests/m5_tests.cpp -o build/m5_tests
 ./build/m5_tests
 ./build/simworld
@@ -85,7 +106,7 @@ same application also includes player-management options.
 For standard g++, create build/ and run:
 
 ~~~sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp main.cpp -o build/simworld
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp main.cpp -o build/simworld
 g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp tests/m4_tests.cpp -o build/m4_tests
 ./build/m4_tests
 ./build/simworld
