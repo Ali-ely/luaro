@@ -2,12 +2,21 @@
 #define WORLD_H
 
 #include "Player.h"
+#include "Queue.h"
+#include "Event.h"
 
 #include <iosfwd>
 #include <string>
 #include <vector>
 
 enum Phase { NIGHT, DAY };
+
+// A valid ballot; IDs stay safe even if players later die or are removed.
+struct Ballot {
+    int voterId;
+    int targetId;
+    int weight;
+};
 
 // Owns the village's players and runs phase-dependent actions polymorphically.
 // The output stream is borrowed and must outlive this World.
@@ -18,7 +27,15 @@ private:
     Phase phase;
     int completedTurns;
     bool runningTurn;
+    bool resolvingEvents;
+    Queue<Event*> events;
+    std::vector<Ballot> ballots;
+    int packTargetId;
     std::ostream& output;
+
+    void discardPendingEvents();
+    void tallyVotes();
+    void clearProtection();
 
 public:
     World();
@@ -45,6 +62,21 @@ public:
     bool runTurn();
     int runTurns(int numberOfTurns);
     void reportAction(const Player& player, const std::string& action);
+    void reportEvent(const std::string& message);
+
+    // Ownership transfers on entry, including when enqueueing throws.
+    void enqueueEvent(Event* event);
+    bool addManualEvent(EventKind kind, int sourceId, int targetId);
+    int pendingEventCount() const;
+    void viewPendingEvents() const;
+    void processEvents();
+    int lowestLivingTarget(int excludedId, bool villageOnly = false) const;
+    int packVictim();
+    void queueVote(int voterId, int targetId);
+    bool recordVote(int voterId, int targetId);
+    int ballotCount() const;
+    long long voteTotal(int targetId) const;
+    bool eliminate(int sourceId, int targetId, const std::string& cause, bool respectProtection);
 };
 
 #endif

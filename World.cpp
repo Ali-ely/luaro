@@ -6,14 +6,17 @@
 #include <stdexcept>
 
 World::World()
-    : nextId(1), phase(NIGHT), completedTurns(0), runningTurn(false), output(std::cout) {
+    : nextId(1), phase(NIGHT), completedTurns(0), runningTurn(false),
+      resolvingEvents(false), packTargetId(-1), output(std::cout) {
 }
 
 World::World(std::ostream& output)
-    : nextId(1), phase(NIGHT), completedTurns(0), runningTurn(false), output(output) {
+    : nextId(1), phase(NIGHT), completedTurns(0), runningTurn(false),
+      resolvingEvents(false), packTargetId(-1), output(output) {
 }
 
 World::~World() {
+    discardPendingEvents();
     for (int i = 0; i < playerCount(); ++i) {
         delete players[i];
     }
@@ -24,7 +27,7 @@ int World::createPlayer(RoleKind role) {
 }
 
 int World::createPlayer(RoleKind role, const std::string& name) {
-    if (runningTurn) {
+    if (runningTurn || resolvingEvents) {
         throw std::logic_error("Players cannot be created during a turn.");
     }
     if (nextId == 0) {
@@ -60,7 +63,7 @@ int World::createPlayer(RoleKind role, const std::string& name) {
 }
 
 bool World::removePlayer(int id) {
-    if (runningTurn) {
+    if (runningTurn || resolvingEvents) {
         throw std::logic_error("Players cannot be removed during a turn.");
     }
     for (int i = 0; i < playerCount(); ++i) {
@@ -128,7 +131,7 @@ int World::getCompletedTurns() const { return completedTurns; }
 int World::getCompletedRounds() const { return completedTurns / 2; }
 
 bool World::runTurn() {
-    if (runningTurn) {
+    if (runningTurn || resolvingEvents) {
         throw std::logic_error("A turn is already running.");
     }
     if (livingPlayerCount() == 0) {
@@ -144,6 +147,8 @@ bool World::runTurn() {
         output << "Turn " << completedTurns + 1 << " - "
                << (phase == NIGHT ? "Night" : "Day") << '\n';
         if (phase == NIGHT) {
+            ballots.clear();
+            packTargetId = -1;
             // Current roles use priorities 0, 1, and 2. Keep insertion order within
             // each group; do not reorder the owning vector or inspect role types.
             for (int priority = 0; priority <= 2; ++priority) {
@@ -162,11 +167,19 @@ bool World::runTurn() {
                 }
             }
         }
+        processEvents();
+        if (phase == DAY) {
+            tallyVotes();
+            // Tally elimination may enqueue a Hunter shot, including chain reactions.
+            processEvents();
+        } else {
+            clearProtection();
+        }
     } catch (...) {
+        discardPendingEvents();
         runningTurn = false;
         throw;
     }
-    // M4 will resolve queued events here, before the phase changes.
     ++completedTurns;
     phase = phase == NIGHT ? DAY : NIGHT;
     runningTurn = false;
@@ -192,4 +205,210 @@ int World::runTurns(int numberOfTurns) {
 
 void World::reportAction(const Player& player, const std::string& action) {
     output << "  [" << player.getId() << "] " << player.getName() << ": " << action << '\n';
+}
+
+void World::reportEvent(const std::string& message) {
+    output << "  Event: " << message << '\n';
+}
+
+void World::enqueueEvent(Event* event) {
+    if (event == nullptr) {
+        throw std::invalid_argument("Cannot enqueue a null event.");
+    }
+    try {
+        events.enqueue(event);
+    } catch (...) {
+        delete event;
+        throw;
+    }
+}
+
+void World::discardPendingEvents() {
+    Event* event = nullptr;
+    while (events.dequeue(event)) {
+        delete event;
+    }
+}
+
+int World::pendingEventCount() const { return events.size(); }
+
+void World::viewPendingEvents() const {
+    if (events.isEmpty()) {
+        output << "No pending events.\n";
+    }
+    for (int i = 0; i < events.size(); ++i) {
+        output << i + 1 << ". ";
+        events.at(i)->describe(output);
+    }
+}
+
+void World::processEvents() {
+    if (resolvingEvents) {
+        throw std::logic_error("Events are already being resolved.");
+    }
+    resolvingEvents = true;
+    Event* event = nullptr;
+    try {
+        while (events.dequeue(event)) {
+            try {
+                output << "  Resolve: ";
+                event->describe(output);
+                event->apply(*this);
+            } catch (...) {
+                delete event;
+                event = nullptr;
+                throw;
+            }
+            delete event;
+            event = nullptr;
+        }
+    } catch (...) {
+        discardPendingEvents();
+        resolvingEvents = false;
+        throw;
+    }
+    resolvingEvents = false;
+}
+
+bool World::addManualEvent(EventKind kind, int sourceId, int targetId) {
+    if (runningTurn || resolvingEvents) {
+        throw std::logic_error("Manual events can only be added between turns.");
+    }
+    Player* source = findPlayer(sourceId);
+    Player* target = findPlayer(targetId);
+    if (source == nullptr || target == nullptr || !source->isAlive() || !target->isAlive()) {
+        reportEvent("Not queued: select existing, living source and target players.");
+        return false;
+    }
+    if (sourceId == targetId && kind != HEAL_EVENT) {
+        reportEvent("Not queued: only healing can target its source.");
+        return false;
+    }
+    // These are manual-menu validations, not role dispatch in a normal turn.
+    switch (kind) {
+        case KILL_EVENT:
+            if (phase == NIGHT) { enqueueEvent(new KillEvent(sourceId, targetId)); return true; }
+            break;
+        case HEAL_EVENT:
+            if (phase == NIGHT && source->getRole() == WITCH_ROLE) {
+                enqueueEvent(new HealEvent(sourceId, targetId)); return true;
+            }
+            break;
+        case POISON_EVENT:
+            if (phase == NIGHT && source->getRole() == WITCH_ROLE) {
+                enqueueEvent(new KillEvent(sourceId, targetId, true)); return true;
+            }
+            break;
+        case REVEAL_EVENT:
+            if (phase == NIGHT && source->getRole() == SEER_ROLE) {
+                enqueueEvent(new RevealEvent(sourceId, targetId)); return true;
+            }
+            break;
+        case VOTE_EVENT:
+            if (phase == DAY) { enqueueEvent(new VoteEvent(sourceId, targetId)); return true; }
+            break;
+        default: break;
+    }
+    reportEvent("Not queued: event kind, phase, or source role is invalid.");
+    return false;
+}
+
+int World::lowestLivingTarget(int excludedId, bool villageOnly) const {
+    int chosen = 0;
+    for (int i = 0; i < playerCount(); ++i) {
+        const Player* player = players[i];
+        if (player->isAlive() && player->getId() != excludedId
+            && (!villageOnly || !player->isWolf())
+            && (chosen == 0 || player->getId() < chosen)) {
+            chosen = player->getId();
+        }
+    }
+    return chosen;
+}
+
+int World::packVictim() {
+    if (packTargetId == -1) {
+        packTargetId = lowestLivingTarget(0, true);
+    }
+    return packTargetId;
+}
+
+void World::queueVote(int voterId, int targetId) {
+    if (targetId != 0) {
+        enqueueEvent(new VoteEvent(voterId, targetId));
+    }
+}
+
+bool World::recordVote(int voterId, int targetId) {
+    const Player* voter = findPlayer(voterId);
+    const Player* target = findPlayer(targetId);
+    if (phase != DAY || voter == nullptr || target == nullptr || !target->isAlive()
+        || voterId == targetId) {
+        return false;
+    }
+    for (int i = 0; i < ballotCount(); ++i) {
+        if (ballots[i].voterId == voterId) {
+            return false; // First valid ballot wins, including a manual override.
+        }
+    }
+    Ballot ballot = {voterId, targetId, voter->voteWeight()};
+    ballots.push_back(ballot);
+    return true;
+}
+
+int World::ballotCount() const { return static_cast<int>(ballots.size()); }
+
+long long World::voteTotal(int targetId) const {
+    long long total = 0;
+    for (int i = 0; i < ballotCount(); ++i) {
+        if (ballots[i].targetId == targetId) {
+            total += ballots[i].weight;
+        }
+    }
+    return total;
+}
+
+void World::tallyVotes() {
+    int targetId = 0;
+    long long highest = 0;
+    bool tied = false;
+    for (int i = 0; i < playerCount(); ++i) {
+        if (players[i]->isAlive()) {
+            long long total = voteTotal(players[i]->getId());
+            if (total > highest) {
+                highest = total;
+                targetId = players[i]->getId();
+                tied = false;
+            } else if (total > 0 && total == highest) {
+                tied = true;
+            }
+        }
+    }
+    if (targetId == 0 || tied) {
+        reportEvent("No day elimination: no valid votes or a tied highest total.");
+    } else {
+        eliminate(0, targetId, "village vote", false);
+    }
+}
+
+bool World::eliminate(int sourceId, int targetId, const std::string& cause, bool respectProtection) {
+    Player* target = findPlayer(targetId);
+    if (target == nullptr || !target->isAlive()) {
+        return false;
+    }
+    if (respectProtection && target->isProtected()) {
+        reportEvent("Player " + std::to_string(targetId) + " survived " + cause + " (protected).");
+        return false;
+    }
+    target->setAlive(false); // Set this before the hook so repeated attacks cannot repeat it.
+    target->onDeath(*this);
+    reportEvent("Player " + std::to_string(targetId) + " died by " + cause
+                + " (source " + std::to_string(sourceId) + ").");
+    return true;
+}
+
+void World::clearProtection() {
+    for (int i = 0; i < playerCount(); ++i) {
+        players[i]->setProtected(false);
+    }
 }

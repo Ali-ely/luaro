@@ -13,6 +13,7 @@ struct SuspicionEntry {
 struct InspectionResult {
     int playerId;
     RoleKind role;
+    bool wolf;
 };
 
 // One consumed potion. The log also determines which potions remain available.
@@ -61,6 +62,7 @@ public:
     int getInspectionCount() const;
     InspectionResult getInspection(int index) const;
     void recordInspection(int playerId, RoleKind role);
+    bool receiveInspection(int targetId, RoleKind role) override;
     int nightOrder() const override;
 };
 
@@ -85,6 +87,7 @@ public:
     bool hasHealingPotion() const;
     bool hasPoisonPotion() const;
     bool recordPotionUse(int targetId, bool healing);
+    bool spendPotion(int targetId, bool healing) override;
     int nightOrder() const override;
 };
 

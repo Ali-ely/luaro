@@ -96,10 +96,32 @@ void Villager::describe(std::ostream& output) const {
 }
 
 void Villager::act(World& world) {
+    if (!isAlive()) { return; }
     if (world.getPhase() == NIGHT) {
         world.reportAction(*this, "Villager observes the village for suspicious activity.");
+        for (int i = 0; i < world.playerCount(); ++i) {
+            const Player* player = world.playerAt(i);
+            if (!player->isAlive() || player->getId() == getId()) { continue; }
+            bool known = false;
+            for (int j = 0; j < count; ++j) {
+                if (suspicions[j].playerId == player->getId()) { known = true; }
+            }
+            if (!known) { setSuspicion(player->getId(), 0); }
+        }
     } else {
         world.reportAction(*this, "Villager weighs suspicion scores for a day vote.");
+        int target = world.lowestLivingTarget(getId());
+        int highest = 0;
+        for (int i = 0; i < count; ++i) {
+            const Player* player = world.findPlayer(suspicions[i].playerId);
+            if (player != nullptr && player->isAlive() && player->getId() != getId()
+                && (suspicions[i].score > highest
+                    || (suspicions[i].score == highest && player->getId() < target))) {
+                target = player->getId();
+                highest = suspicions[i].score;
+            }
+        }
+        world.queueVote(getId(), target);
     }
 }
 
@@ -157,10 +179,31 @@ void Seer::describe(std::ostream& output) const {
 }
 
 void Seer::act(World& world) {
+    if (!isAlive()) { return; }
     if (world.getPhase() == NIGHT) {
         world.reportAction(*this, "Seer prepares a secret role inspection.");
+        int target = 0;
+        for (int i = 0; i < world.playerCount(); ++i) {
+            const Player* player = world.playerAt(i);
+            if (!player->isAlive() || player->getId() == getId()) { continue; }
+            bool known = false;
+            for (int j = 0; j < count; ++j) {
+                if (inspectionResults[j].playerId == player->getId()) { known = true; }
+            }
+            if (!known && (target == 0 || player->getId() < target)) { target = player->getId(); }
+        }
+        if (target != 0) { world.enqueueEvent(new RevealEvent(getId(), target)); }
     } else {
         world.reportAction(*this, "Seer consults inspection results for a day vote.");
+        int knownWolf = 0;
+        for (int i = 0; i < count; ++i) {
+            const Player* player = world.findPlayer(inspectionResults[i].playerId);
+            if (inspectionResults[i].wolf && player != nullptr && player->isAlive()
+                && player->getId() != getId() && (knownWolf == 0 || player->getId() < knownWolf)) {
+                knownWolf = player->getId();
+            }
+        }
+        world.queueVote(getId(), knownWolf == 0 ? world.lowestLivingTarget(getId()) : knownWolf);
     }
 }
 
@@ -218,14 +261,17 @@ void Witch::describe(std::ostream& output) const {
 }
 
 void Witch::act(World& world) {
+    if (!isAlive()) { return; }
     if (world.getPhase() == NIGHT) {
         std::string action = "Witch checks night potions: healing ";
         action += hasHealingPotion() ? "available" : "spent";
         action += ", poison ";
         action += hasPoisonPotion() ? "available." : "spent.";
         world.reportAction(*this, action);
+        if (hasHealingPotion()) { world.enqueueEvent(new HealEvent(getId(), getId())); }
     } else {
         world.reportAction(*this, "Witch prepares a normal day vote and saves potions for night.");
+        world.queueVote(getId(), world.lowestLivingTarget(getId()));
     }
 }
 
@@ -283,10 +329,12 @@ void Hunter::describe(std::ostream& output) const {
 }
 
 void Hunter::act(World& world) {
+    if (!isAlive()) { return; }
     if (world.getPhase() == NIGHT) {
         world.reportAction(*this, "Hunter stands watch and prepares retaliation.");
     } else {
         world.reportAction(*this, "Hunter prepares a day vote and keeps a final shot ready.");
+        world.queueVote(getId(), world.lowestLivingTarget(getId()));
     }
 }
 
@@ -344,10 +392,17 @@ void Werewolf::describe(std::ostream& output) const {
 }
 
 void Werewolf::act(World& world) {
+    if (!isAlive()) { return; }
     if (world.getPhase() == NIGHT) {
         world.reportAction(*this, "Werewolf prepares to attack the pack's chosen victim.");
+        int target = world.packVictim();
+        if (target != 0) {
+            recordTarget(target);
+            world.enqueueEvent(new KillEvent(getId(), target));
+        }
     } else {
         world.reportAction(*this, "Werewolf plans a day vote against the village.");
+        world.queueVote(getId(), world.lowestLivingTarget(getId(), true));
     }
 }
 
@@ -405,10 +460,30 @@ void AlphaWolf::describe(std::ostream& output) const {
 }
 
 void AlphaWolf::act(World& world) {
+    if (!isAlive()) { return; }
     if (world.getPhase() == NIGHT) {
         world.reportAction(*this, "AlphaWolf coordinates the pack's night attack.");
+        int memberCount = 0;
+        for (int i = 0; i < world.playerCount(); ++i) {
+            const Player* player = world.playerAt(i);
+            if (player->isAlive() && player->isWolf() && player->getId() != getId()) { ++memberCount; }
+        }
+        int* members = memberCount == 0 ? nullptr : new int[memberCount];
+        int position = 0;
+        for (int i = 0; i < world.playerCount(); ++i) {
+            const Player* player = world.playerAt(i);
+            if (player->isAlive() && player->isWolf() && player->getId() != getId()) {
+                members[position++] = player->getId();
+            }
+        }
+        delete[] packMembers;
+        packMembers = members;
+        count = memberCount;
+        int target = world.packVictim();
+        if (target != 0) { world.enqueueEvent(new KillEvent(getId(), target)); }
     } else {
         world.reportAction(*this, "AlphaWolf prepares a double-weight day vote.");
+        world.queueVote(getId(), world.lowestLivingTarget(getId(), true));
     }
 }
 
@@ -437,11 +512,16 @@ void Villager::setSuspicion(int playerId, int score) {
 void Seer::recordInspection(int playerId, RoleKind role) {
     requirePlayerId(playerId);
     roleName(role); // Validate the role before storing it.
-    InspectionResult result = {playerId, role};
+    InspectionResult result = {playerId, role, role == WEREWOLF_ROLE || role == ALPHA_WOLF_ROLE};
     appendToArray(inspectionResults, count, result);
 }
 
 int Seer::nightOrder() const { return 0; }
+
+bool Seer::receiveInspection(int targetId, RoleKind role) {
+    recordInspection(targetId, role);
+    return true;
+}
 
 bool Witch::hasHealingPotion() const {
     for (int i = 0; i < count; ++i) {
@@ -473,13 +553,20 @@ bool Witch::recordPotionUse(int targetId, bool healing) {
 
 int Witch::nightOrder() const { return 0; }
 
+bool Witch::spendPotion(int targetId, bool healing) { return recordPotionUse(targetId, healing); }
+
 void Hunter::recordShot(int targetId) {
     requirePlayerId(targetId);
     appendToArray(pastShots, count, targetId);
 }
 
-void Hunter::onDeath(World&) {
-    // M4 will enqueue one ShootEvent here; M1 only establishes the virtual hook.
+void Hunter::onDeath(World& world) {
+    if (isAlive()) { return; }
+    int target = world.lowestLivingTarget(getId());
+    if (target != 0) {
+        recordShot(target);
+        world.enqueueEvent(new ShootEvent(getId(), target));
+    }
 }
 
 void Werewolf::recordTarget(int targetId) {

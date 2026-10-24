@@ -49,6 +49,9 @@ public:
     virtual int nightOrder() const;
     virtual int voteWeight() const;
     virtual void onDeath(World& world);
+    // Event delivery uses virtual hooks, without downcasting the recipient.
+    virtual bool receiveInspection(int targetId, RoleKind role);
+    virtual bool spendPotion(int targetId, bool healing);
 };
 
 #endif

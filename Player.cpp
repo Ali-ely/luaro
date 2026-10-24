@@ -80,3 +80,6 @@ int Player::voteWeight() const { return 1; }
 void Player::onDeath(World&) {
     // Most players have no death reaction. Hunter overrides this hook.
 }
+
+bool Player::receiveInspection(int, RoleKind) { return false; }
+bool Player::spendPotion(int, bool) { return false; }

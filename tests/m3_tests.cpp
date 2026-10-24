@@ -160,6 +160,8 @@ void testRoleActionsAndTurnOrder(Checks& checks) {
     std::ostringstream output;
     World world(output);
     addMixedRoles(world);
+    // M4 now applies attacks. Preserve the first victim so all six can act on Day.
+    world.enqueueEvent(new HealEvent(5, 2));
     checks.expect(world.runTurn(), "One night runs successfully");
     std::string night = output.str();
     checks.expect(world.getPhase() == DAY && world.getCompletedTurns() == 1
@@ -203,12 +205,17 @@ void testRoleActionsAndTurnOrder(Checks& checks) {
     }
     checks.expect(day.find("AlphaWolf prepares a double-weight day vote") != std::string::npos,
                   "AlphaWolf reports its distinct day behavior");
-    checks.expect(world.livingPlayerCount() == 6,
-                  "M3 action messages do not apply M4 event effects");
+    checks.expect(world.livingPlayerCount() == 5,
+                  "All six act before M4 resolves the day elimination");
 
+    // A two-villager tie keeps the batch-counting test independent of eliminations.
+    World batch(output);
+    batch.createPlayer(VILLAGER_ROLE);
+    batch.createPlayer(VILLAGER_ROLE);
+    batch.runTurns(2);
     output.str("");
-    checks.expect(world.runTurns(5) == 5 && world.getCompletedTurns() == 7
-                  && world.getCompletedRounds() == 3 && world.getPhase() == DAY,
+    checks.expect(batch.runTurns(5) == 5 && batch.getCompletedTurns() == 7
+                  && batch.getCompletedRounds() == 3 && batch.getPhase() == DAY,
                   "Running several turns updates phase and round bookkeeping");
     checks.expect(occurrences(output.str(), " - Night\n") == 3
                   && occurrences(output.str(), " - Day\n") == 2,
@@ -218,7 +225,7 @@ void testRoleActionsAndTurnOrder(Checks& checks) {
 void testDeadAndRemovedPlayers(Checks& checks) {
     std::ostringstream output;
     World world(output);
-    addMixedRoles(world);
+    for (int i = 0; i < 6; ++i) { world.createPlayer(VILLAGER_ROLE); }
     world.findPlayer(5)->setAlive(false);
     world.findPlayer(2)->setAlive(false);
     world.removePlayer(3);

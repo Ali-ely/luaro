@@ -4,39 +4,41 @@ A turn-based C++ console simulation of a werewolf village, planned for CSCE 1101
 
 ## Status
 
-M1 through M3 are implemented: the player hierarchy, custom Stack and Queue, and
-a World that owns players and runs Night/Day turns through virtual actions.
-The user approved starting M3 on 2026-10-24. M3 is ready for review; M4 has not started.
+M1 through M4 are implemented: players, containers, World turns, and event effects.
+M4 adds attacks, protection, poison, inspections, weighted votes, and Hunter
+retaliation. M5 has not started.
 
-Each role now prints a distinct action for each phase. Events, actual attacks,
-inspection results, healing, and votes arrive in M4; Hunter's death hook remains
-empty until then. This is not yet a complete playable game.
+## Build and try M4
+
+Run the tests and unattended demonstration:
+
+~~~powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m4.ps1
+~~~
+
+Add -Interactive to open the event menu after testing. It lists players, views
+pending events, adds manual events, and runs one or several turns.
+
+For standard g++, create build/ and run:
+
+~~~sh
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp main.cpp -o build/simworld
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp tests/m4_tests.cpp -o build/m4_tests
+./build/m4_tests
+./build/simworld
+~~~
+
+Pass --demo to simworld for unattended output.
+Read [the M4 walkthrough](docs/M4.md) for rules, ownership, and a menu exercise.
 
 ## Build and try M3
 
-On this Windows machine, run from the repository root:
-
-```powershell
+~~~powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m3.ps1
-```
+~~~
 
-This builds and runs the World tests and the current `main.cpp` demonstration.
-It uses g++ from PATH or the installed Qt MinGW compiler. The demonstration shows
-night priorities, day order, one/multiple turns, dead-player skipping, removal,
-and unique IDs. No interactive input is required yet.
-
-For a standard g++ environment, first create `build/`, then run:
-
-```sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp main.cpp -o build/simworld
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp tests/m3_tests.cpp -o build/m3_tests
-./build/m3_tests
-./build/simworld
-```
-
-Read [the M3 walkthrough](docs/M3.md) for ownership, ID generation, turn order,
-phase bookkeeping, and the distinction between dead and removed players.
-
+The original World demonstration is preserved in examples/m3_demo.cpp and now
+uses the real event effects. See [the M3 walkthrough](docs/M3.md).
 ## Build and try M2
 
 On this Windows machine, run from the repository root:
@@ -76,8 +78,8 @@ only to this process; it does not change the machine's settings.
 For a standard g++ environment, first create `build/`, then run:
 
 ```sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp examples/m1_demo.cpp -o build/m1_demo
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp tests/m1_tests.cpp -o build/m1_tests
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp examples/m1_demo.cpp -o build/m1_demo
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp tests/m1_tests.cpp -o build/m1_tests
 ./build/m1_tests
 ./build/m1_demo
 ```
