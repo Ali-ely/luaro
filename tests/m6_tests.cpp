@@ -58,7 +58,7 @@ void testSequenceAndFailures(Checks& checks) {
     try { world.modifyPlayer(original, "Invalid", false, true); } catch (const std::invalid_argument&) { ++rejected; }
     try { world.createPlayer(SEER_ROLE, ""); } catch (const std::invalid_argument&) { ++rejected; }
     try { world.createPlayer(SEER_ROLE, "Invalid", false, true); } catch (const std::invalid_argument&) { ++rejected; }
-    try { world.createPlayer(static_cast<RoleKind>(99)); } catch (const std::invalid_argument&) { ++rejected; }
+    try { world.createPlayer(static_cast<RoleKind>(6)); } catch (const std::invalid_argument&) { ++rejected; }
     checks.expect(rejected == 5 && world.undoCount() == count
                   && description(world.findPlayer(original)) == originalState, "Invalid edits do not change history or player");
     checks.expect(!world.removePlayer(999) && world.duplicatePlayer(999) == 0

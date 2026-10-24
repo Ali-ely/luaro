@@ -1,301 +1,160 @@
 # Loup-Garou SimWorld
 
-A turn-based C++ console simulation of a werewolf village, planned for CSCE 1101.
+A C++17 console simulation by **Ali Elyazori (900244034)** and
+**Youcef Rabehi (900244346)**, following the supplied design, milestones, gaps,
+and CSCE 1101 course topics.
 
-## Status
+## Build and run
 
-M1 through M9 are implemented, including victory/draw detection and cumulative
-statistics. M10 final verification and documentation cleanup remains.
-
-## Build and try M9
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m9.ps1
-```
-
-Add `-Interactive` to use the console after testing. Option **14** displays the
-current result, completed turns/rounds, ballot count, weighted vote total, and
-elimination history. Final statistics print automatically when a game ends.
-Batches stop at victory or draw. Successful player-management edits reopen the
-simulation while preserving its cumulative statistics.
-Read [the M9 walkthrough](docs/M9.md) for outcome timing and counting rules.
-
-For standard g++, create `build/` and run:
-
-```sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp main.cpp -o build/simworld
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp tests/m9_tests.cpp -o build/m9_tests
-./build/m9_tests
-./build/simworld
-```
-
-## Build and try M8
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m8.ps1
-```
-
-Add `-Interactive` to use the console after testing. Options **1-12** keep their
-existing actions; **13** shows one player's complete details. All prompts now
-re-prompt for invalid values, and EOF exits safely. A menu batch allows 1-1,000
-turns. The current phase, completed turns/rounds, and undo count appear above
-the menu. Read [the M8 walkthrough](docs/M8.md) for the full command table.
-
-For standard g++, create `build/` and run:
-
-```sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp main.cpp -o build/simworld
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp tests/m8_tests.cpp -o build/m8_tests
-./build/m8_tests
-./build/simworld
-```
-
-## Build and try M7
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m7.ps1
-```
-
-Add `-Interactive` to open the menu after testing. Option **11** asks the selected
-player to inspect; option **12** requests healing or poison. Only a Seer supports
-inspection and only a Witch supports potions. Unsupported players get a message.
-Actions queue for the next Night and use the same event rules as manual actions.
-Read [the M7 walkthrough](docs/M7.md) for the checked casts and a menu exercise.
-
-For standard g++, create `build/` and run:
-
-```sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp main.cpp -o build/simworld
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp tests/m7_tests.cpp -o build/m7_tests
-./build/m7_tests
-./build/simworld
-```
-
-## Build and try M6
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m6.ps1
-```
-
-Add `-Interactive` to open the menu after testing. Option **10** undoes the last
-successful create, delete, duplicate, or modify action. Starting a turn clears
-editing history. The unattended demo restores a deleted Seer, reverses its
-modification, and removes its duplicate through undo.
-Read [the M6 walkthrough](docs/M6.md) for ownership, restoration, and a menu exercise.
-
-For standard g++, create `build/` and run:
-
-```sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp main.cpp -o build/simworld
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp tests/m6_tests.cpp -o build/m6_tests
-./build/m6_tests
-./build/simworld
-```
-
-## Build and try M5
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m5.ps1
-```
-
-Add `-Interactive` to open the menu after testing. Options 6-9 create, delete,
-duplicate, and modify players. The unattended demo duplicates a Seer with
-inspection history, edits the copy, and deletes it while preserving the original.
-Read [the M5 walkthrough](docs/M5.md) for the API and a step-by-step menu exercise.
-
-For standard g++, create `build/` and run:
-
-```sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp main.cpp -o build/simworld
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp tests/m5_tests.cpp -o build/m5_tests
-./build/m5_tests
-./build/simworld
-```
-
-## Build and try M4
-
-Run the tests and unattended demonstration:
+From the repository root on this Windows machine:
 
 ~~~powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m4.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m10.ps1 -Interactive
 ~~~
 
-Add -Interactive to open the current menu after testing. It lists players, views
-pending events, adds manual events, and runs one or several turns. Since M5 the
-same application also includes player-management options.
+This builds without warnings, runs all nine suites and two application
+playthroughs, creates a source-only archive, and opens the console. Omit
+-Interactive for unattended verification. Add -MemoryChecks for Visual Studio
+AddressSanitizer and debug-heap checks.
 
-For standard g++, create build/ and run:
+The compiler is g++ from PATH or the installed Qt MinGW compiler. The
+execution-policy option applies only to that PowerShell process. Generated
+files stay in ignored build/; the application is build/simworld.exe.
+
+For standard g++:
 
 ~~~sh
+mkdir -p build
 g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp main.cpp -o build/simworld
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp tests/m4_tests.cpp -o build/m4_tests
-./build/m4_tests
 ./build/simworld
+./build/simworld --demo
 ~~~
 
-Pass --demo to simworld for unattended output.
-Read [the M4 walkthrough](docs/M4.md) for rules, ownership, and a menu exercise.
+Only root production .cpp files form the application. Compile each test
+separately: tests and historical examples have their own main functions.
 
-## Build and try M3
+## Console
+
+The application starts with eight sample players at Night. One turn is one
+phase; one complete round is Night followed by Day.
+
+| Choice | Action |
+| --- | --- |
+| 0 | Quit |
+| 1 | List all players |
+| 2 | View pending events without consuming them |
+| 3 | Queue a manual event |
+| 4 / 5 | Run one phase / a batch of 1-1,000 phases |
+| 6 | Create any role with defaults or custom values |
+| 7 / 8 / 9 | Delete / duplicate / modify a player |
+| 10 | Undo the most recent player-management edit |
+| 11 / 12 | Ask a player to inspect / use a potion |
+| 13 / 14 | Show one player's details / simulation statistics |
+
+Integer and name prompts re-prompt on invalid values. EOF exits without applying
+an incomplete command. Details are an administrator view that reveals roles;
+Seer inspection is a separate gameplay action that queues an event.
+
+## Rules
+
+- Six roles: Villager, Seer, Witch, Hunter, Werewolf, AlphaWolf. Each has distinct
+  phase behavior and its own independently copied dynamic array.
+- Automatic Night actions run Witch/Seer first, wolves next, then Villager/Hunter.
+  Events resolve FIFO. Manual events precede automatic ones and are never sorted.
+- Wolves share one eligible village victim. Targeting uses learned facts/suspicion
+  where available, then the lowest eligible ID.
+- Witch has one heal and one poison. She auto-heals herself once; poison is an
+  explicit user action. Healing protects a living target and never resurrects.
+  Protection blocks attacks, poison, and Hunter shots, then expires after Night.
+- Day uses the first valid ballot per source. AlphaWolf weight is two; others
+  one. Highest-total ties and no valid votes cause no elimination.
+- Hunter death appends a final shot. Every reaction resolves before victory:
+  no wolves means village victory, wolf parity or greater means wolf victory,
+  and no survivors means a draw. Empty worlds cannot start.
+- Results stop turns. Successful management edits or undo reopen the same
+  simulation and retain statistics. Administrative edits have no death reactions
+  and add no kill records.
+- Undo restores player state, ID, and position. Starting a turn clears history.
+  Turns/events/statistics are not undoable; allocated IDs are never recycled.
+  There is no save/load or randomness.
+
+## Design and requirements
+
+~~~text
+Player (abstract)
+  VillageTeam (abstract): Villager, Seer, Witch, Hunter
+  WolfTeam (abstract): Werewolf, AlphaWolf
+Seer also implements Inspector; Witch also implements PotionUser.
+~~~
+
+Player owns shared identity/flags. Teams share side identity and wolf priority.
+Roles own their histories and behavior. World owns one vector of Player pointers,
+the FIFO events, and undo commands. Normal turns use virtual methods; only the
+two user-selected optional capabilities use checked dynamic_cast.
+
+| Feature | Implementation |
+| --- | --- |
+| F1: diverse entities | Player / Teams / six Roles |
+| F2: creation and constructors | World::createPlayer; role rule-of-three methods |
+| F3: independent duplication | Role clone methods; World::duplicatePlayer |
+| F4: polymorphic turns | World::runTurn/runTurns; virtual act/nightOrder/voteWeight |
+| F5: special capabilities | Inspector / PotionUser; World capability request methods |
+| F6: FIFO events | Queue, Event hierarchy, World event methods |
+| F7: multi-level undo | Command hierarchy, Stack, World::undo |
+| F8: own data structures | Dynamic-array Stack and circular-array Queue |
+| F9: complete console | Console::run and line-based input helpers |
+| F10: memory safety | Virtual destruction, deep copies, IDs, explicit ownership |
+| F11: own feature | Victory/draw checks, cumulative votes, named elimination history |
+
+The complete design report, assumptions, feature map, team details, compilation
+instructions, and accurate AI disclosure are also in main.cpp's header comment.
+Class comments explain responsibility and hierarchy placement. The F1-F11 labels
+were verified against the local SimWorld assignment handout.
+
+The runtime uses standard C++17: classes, inheritance, virtual functions, pointers,
+new[]/delete[], basic templates, loops, exceptions, string, and vector. It uses no
+forbidden stack/queue/list containers, smart pointers, lambdas, move semantics,
+concurrency, or external runtime libraries. Template definitions stay in headers.
+
+## Verification and source archive
 
 ~~~powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m3.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m10.ps1 -MemoryChecks
+powershell -NoProfile -ExecutionPolicy Bypass -File .\verify_memory.ps1
 ~~~
 
-The original World demonstration is preserved in examples/m3_demo.cpp and now
-uses the real event effects. See [the M3 walkthrough](docs/M3.md).
-## Build and try M2
+The second command runs memory checks separately. It finds Visual Studio tools,
+then builds every suite with AddressSanitizer and separately with the debug heap.
 
-On this Windows machine, run from the repository root:
+Linux verification requires g++ and Valgrind:
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m2.ps1
-```
+~~~sh
+sh verify_linux.sh
+~~~
 
-This builds and runs the standalone container tests and demonstration. The script
-uses g++ from PATH or the installed Qt MinGW compiler. It does not change the
-machine's execution policy.
+It runs each suite with AddressSanitizer/UndefinedBehaviorSanitizer and leak
+detection, then Valgrind on separate uninstrumented binaries.
+See [the final verification report](docs/M10.md) for actual results and contracts.
 
-For a standard g++ environment, first create `build/`, then run:
+The final build creates build/Team_900244034_900244346.zip, containing the 19 root
+production .h/.cpp files. It excludes test/example entry points, executables,
+dependencies, and build folders. It does not export this conversation; keep a
+conversation export separately if needed for the assignment hand-in.
 
-```sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. tests/m2_tests.cpp -o build/m2_tests
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. examples/m2_demo.cpp -o build/m2_demo
-./build/m2_tests
-./build/m2_demo
-```
+## Milestone walkthroughs
 
-Read [the M2 walkthrough](docs/M2.md) for the container APIs, array growth,
-queue viewing, pointer ownership, and memory checks.
+M1-M9 describe historical checkpoints; M10 documents the final state. The earlier
+build_mN.ps1 scripts remain available and use current behavior.
 
-## Build and try M1
-
-On this Windows machine, run from the repository root:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m1.ps1
-```
-
-The script uses g++ from PATH, or the installed Qt MinGW compiler. It builds and
-runs both the tests and the demonstration. The execution-policy option applies
-only to this process; it does not change the machine's settings.
-
-For a standard g++ environment, first create `build/`, then run:
-
-```sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp examples/m1_demo.cpp -o build/m1_demo
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp tests/m1_tests.cpp -o build/m1_tests
-./build/m1_tests
-./build/m1_demo
-```
-
-Read [the M1 walkthrough](docs/M1.md) for the file responsibilities, copy examples,
-and memory-check instructions. Generated executables stay under ignored `build/`.
-
-## Requirements and scope
-
-The plan combines the supplied Design, Milestones, and Gaps documents, with the
-Fall 2026 CSCE 1101 handout setting the implementation's complexity level.
-
-- Compile as C++17 with `g++ -std=c++17 -Wall`, without warnings.
-- Separate ordinary class declarations and definitions into `.h` and `.cpp` files.
-  Template definitions stay in `Stack.h` and `Queue.h` so each caller can compile
-  the element type it uses, as anticipated by the design's suggested file list.
-- Use basic classes, inheritance, virtual functions, pointers, dynamic arrays,
-  simple templates, loops, and basic `std::string` and `std::vector` operations.
-- Implement the abstract Player -> team -> concrete role hierarchy with Villager,
-  Seer, Witch, Hunter, Werewolf, and AlphaWolf.
-- Each concrete role owns a variable-size dynamic array and implements a deep-copy
-  constructor, assignment operator, and destructor. `clone()` preserves the ID.
-- Implement custom dynamic-array Stack and Queue templates. Do not use
-  `std::stack`, `std::queue`, `std::deque`, `std::priority_queue`, or `std::list`.
-- Normal turns use virtual dispatch without type checks. Checked `dynamic_cast`
-  is reserved for user-selected Inspector and PotionUser capabilities.
-- Avoid advanced template techniques, lambdas, smart pointers, move semantics,
-  concurrency, external application libraries, and unnecessary frameworks.
-- Validate all input and verify ownership with AddressSanitizer and, where
-  available, Valgrind. No global variables except constants.
-
-## Milestones
-
-Work proceeds one milestone at a time, with an explanation and a pause for user
-testing before advancing.
-
-1. **Player hierarchy:** all six roles, constructors, deep copies, virtual
-   destructors, `clone()`, `describe()`, and `act()`.
-2. **Stack and Queue:** simple templates, safe empty operations, growth, and
-   non-destructive queue viewing.
-3. **World and turns:** one `vector<Player*>`, unique IDs, Night/Day phases, and
-   execution of one or multiple turns.
-4. **Events:** Kill, Heal, Vote, Reveal, and Hunter Shoot events; ordered resolution,
-   manual event creation, and pending-event viewing.
-5. **Player operations:** create with defaults or values, delete, duplicate with a
-   new ID, and validated modification.
-6. **Undo:** commands for create, delete, duplicate, and modify, stored on the
-   custom stack; exact restoration of saved player state and position.
-7. **Special capabilities:** Inspector and PotionUser interfaces with checked casts.
-8. **Menu and input:** expose all operations and handle invalid, overflowing,
-   empty, and end-of-input cases safely.
-9. **Win conditions and statistics:** check after each turn; report rounds, votes,
-   and kill history. Villagers win with no wolves; wolves win at numerical parity
-   or greater against the remaining village team.
-10. **Final verification and documentation:** warning-free build, memory checks,
-    integration scenarios, class comments, and a project header containing team
-    names, world description, hierarchy diagram, F1-F11 feature map, compilation
-    instructions, and an accurate AI usage log.
-
-## Gap fixes included
-
-- Give every role distinct phase-dependent behavior. Hunter's virtual `onDeath()`
-  queues a ShootEvent; AlphaWolf kills at night and has a double-weight day vote.
-- Use virtual `nightOrder()` to run Witch and Seer at order 0 before wolves at
-  order 1, with no role type checks in the turn loop.
-- A HealEvent sets protection before queued KillEvents resolve. Kills check that
-  flag; protection clears at the end of the night. Keep event creation order.
-- Only duplication assigns a new ID after cloning. Delete and modify commands
-  retain snapshots and vector positions for exact undo.
-- Events reference player IDs rather than player pointers and safely ignore
-  missing players. Delete processed events. Commands own their snapshots, and
-  undo/history cleanup releases commands and their saved data.
-
-## Approved gameplay rules for later milestones
-
-- Start at Night. One turn is one phase; one round is Night followed by Day.
-- Dead players remain inspectable; administrative deletion removes them and does
-  not trigger a Hunter death reaction.
-- Use simple deterministic targeting: role knowledge/suspicion where available,
-  otherwise the lowest eligible ID. No self-voting. Wolves share one night victim.
-- Each Witch has one healing potion and one poison potion. Healing protects a
-  living target, with no resurrection; poison follows the protection rule.
-- Resolve queued events and all death reactions before checking victory. Trigger
-  a Hunter's retaliation only once per elimination.
-- Tied highest vote totals or no valid votes produce no elimination. Count
-  ballots separately from their weighted voting total.
-- Undo covers player-management edits between turns; starting a turn clears that
-  editing history. Turn execution itself is not undoable.
-- An empty world cannot start; if no one survives an event chain, declare a draw.
-- The menu is an administrator view that may reveal roles. Automatic decisions
-  use the knowledge available to the acting role.
-
-The original F1-F11 specification has not been supplied, so the full numbered
-feature mapping must not be invented. Team-member names also remain to be supplied.
-
-## Validation plan
-
-Check independent copies for every role; container ordering and growth; protected
-targets; Hunter death reactions; AlphaWolf voting weight; exact delete/modify undo;
-events referencing deleted players; repeated undo; invalid input; and both victory
-conditions with matching statistics. Run memory checks over these interactions.
-
-M1 tests cover all six roles with empty and populated copies, assignment over
-existing arrays, self-assignment, source destruction, clone independence, growth,
-invalid indices/values, and deletion through `Player*`.
-
-M2 tests cover LIFO/FIFO order, safe empty operations, repeated growth and queue
-wraparound, non-destructive viewing, independent copies, strings and pointer
-values, and cleanup when element copying throws an exception.
-
-M3 tests cover all six role messages in both phases, night priorities, stable
-player order, unique IDs, safe removal, dead-player skipping, zero/negative turn
-requests, empty/all-dead worlds, multi-turn counting, counter overflow, output
-failure recovery, vector growth, and ownership cleanup.
+| Milestone | Walkthrough |
+| --- | --- |
+| M1: hierarchy and deep copies | [M1](docs/M1.md) |
+| M2: custom containers | [M2](docs/M2.md) |
+| M3: World and phases | [M3](docs/M3.md) |
+| M4: events | [M4](docs/M4.md) |
+| M5: player management | [M5](docs/M5.md) |
+| M6: undo | [M6](docs/M6.md) |
+| M7: capabilities | [M7](docs/M7.md) |
+| M8: console and input | [M8](docs/M8.md) |
+| M9: outcomes and statistics | [M9](docs/M9.md) |
+| M10: final verification | [M10](docs/M10.md) |

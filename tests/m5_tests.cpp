@@ -61,7 +61,8 @@ void testManagement(Checks& checks) {
     int rejected = 0;
     try { world.createPlayer(VILLAGER_ROLE, " "); } catch (const std::invalid_argument&) { ++rejected; }
     try { world.createPlayer(VILLAGER_ROLE, "Bad", false, true); } catch (const std::invalid_argument&) { ++rejected; }
-    try { world.createPlayer(static_cast<RoleKind>(99)); } catch (const std::invalid_argument&) { ++rejected; }
+    // Six is an unknown label within this non-fixed enum's representable range.
+    try { world.createPlayer(static_cast<RoleKind>(6)); } catch (const std::invalid_argument&) { ++rejected; }
     checks.expect(rejected == 3 && world.playerCount() == before, "Bad creation leaves collection unchanged");
     checks.expect(world.createPlayer(SEER_ROLE) == protectedId + 1, "Invalid creation consumes no IDs");
     checks.expect(world.duplicatePlayer(999) == 0 && !world.removePlayer(999)

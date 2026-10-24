@@ -39,6 +39,8 @@ struct KillRecord {
 
 // Owns the village's players and runs phase-dependent actions polymorphically.
 // The output stream is borrowed and must outlive this World.
+// Player lookups are borrowed too: removal and modification undo can invalidate
+// those pointers. Keep IDs across edits, as queued events do.
 class World {
     friend class CreateCmd;
     friend class DuplicateCmd;

@@ -23,7 +23,8 @@ struct PotionUse {
     bool healing;
 };
 
-// Villager owns its suspicions array and copies it independently.
+// Ordinary village role: votes using its own suspicion array rather than secret roles.
+// It belongs to VillageTeam and deep-copies its independently owned array.
 class Villager : public VillageTeam {
 private:
     SuspicionEntry* suspicions;
@@ -44,7 +45,8 @@ public:
     void setSuspicion(int playerId, int score);
 };
 
-// Seer owns its inspections array and copies it independently.
+// Village investigator with an owned inspection history. Inspector is a separate
+// capability so the optional user action is not offered by every Player.
 class Seer : public VillageTeam, public Inspector {
 private:
     InspectionResult* inspectionResults;
@@ -68,7 +70,8 @@ public:
     int nightOrder() const override;
 };
 
-// Witch owns its potions used array and copies it independently.
+// Village potion user; its owned usage log determines remaining single-use stock.
+// PotionUser adds the optional action without adding it to other village roles.
 class Witch : public VillageTeam, public PotionUser {
 private:
     PotionUse* potionLog;
@@ -94,7 +97,8 @@ public:
     int nightOrder() const override;
 };
 
-// Hunter owns its past shots array and copies it independently.
+// Village defender: a virtual death reaction queues retaliation. Its owned shot
+// history is independent of other Hunters and preserved by snapshots.
 class Hunter : public VillageTeam {
 private:
     int* pastShots;
@@ -116,7 +120,7 @@ public:
     void onDeath(World& world) override;
 };
 
-// Werewolf owns its past targets array and copies it independently.
+// Standard WolfTeam attacker; records pack targets in its own deep-copied array.
 class Werewolf : public WolfTeam {
 private:
     int* pastTargets;
@@ -137,7 +141,8 @@ public:
     void recordTarget(int targetId);
 };
 
-// AlphaWolf owns its pack members array and copies it independently.
+// WolfTeam coordinator with an owned pack-members array and double-weight vote.
+// Virtual voting weight distinguishes it without a role check in the tally.
 class AlphaWolf : public WolfTeam {
 private:
     int* packMembers;

@@ -14,7 +14,8 @@ enum RoleKind {
 
 const char* roleName(RoleKind role);
 
-// Abstract owner of the state shared by every player. World will assign IDs.
+// Abstract root for shared identity and flags; virtual actions keep World independent
+// of concrete roles. World assigns IDs, and only duplication changes a cloned ID.
 class Player {
     friend class World; // Only World may assign a new identity to a duplicate.
 private:
