@@ -118,6 +118,20 @@ concurrency, or external runtime libraries. Template definitions stay in headers
 
 ## Verification and source archive
 
+Test an already compiled Windows executable without rebuilding:
+
+~~~powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test_exe.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test_exe.ps1 -ExePath .\build\simworld.exe
+~~~
+
+The script runs 11 console scenarios: startup, invalid input, management and undo,
+capabilities and events, one turn, both victory outcomes, EOF, incomplete input,
+and invalid command-line arguments. Each scenario has a 10-second timeout.
+It checks exit codes and output, prints PASS/FAIL, and saves transcripts and a
+summary in build/exe-tests/. Any failed scenario returns a failing script exit.
+Use -TimeoutSeconds or -ReportDirectory to change those defaults.
+
 ~~~powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m10.ps1 -MemoryChecks
 powershell -NoProfile -ExecutionPolicy Bypass -File .\verify_memory.ps1
