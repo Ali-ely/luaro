@@ -449,6 +449,41 @@ bool World::addManualEvent(EventKind kind, int sourceId, int targetId) {
     return false;
 }
 
+bool World::requestInspection(int sourceId, int targetId) {
+    if (runningTurn || resolvingEvents) {
+        throw std::logic_error("Special actions are only available between turns.");
+    }
+    Player* source = findPlayer(sourceId);
+    if (source == nullptr) {
+        reportEvent("Unknown player ID.");
+        return false;
+    }
+    // Only user-selected optional capabilities use checked runtime casts.
+    Inspector* inspector = dynamic_cast<Inspector*>(source);
+    if (inspector == nullptr) {
+        reportEvent("This player cannot inspect.");
+        return false;
+    }
+    return inspector->inspect(*this, targetId);
+}
+
+bool World::requestPotion(int sourceId, int targetId, bool healing) {
+    if (runningTurn || resolvingEvents) {
+        throw std::logic_error("Special actions are only available between turns.");
+    }
+    Player* source = findPlayer(sourceId);
+    if (source == nullptr) {
+        reportEvent("Unknown player ID.");
+        return false;
+    }
+    PotionUser* potionUser = dynamic_cast<PotionUser*>(source);
+    if (potionUser == nullptr) {
+        reportEvent("This player cannot use potions.");
+        return false;
+    }
+    return potionUser->usePotion(*this, targetId, healing);
+}
+
 int World::lowestLivingTarget(int excludedId, bool villageOnly) const {
     int chosen = 0;
     for (int i = 0; i < playerCount(); ++i) {

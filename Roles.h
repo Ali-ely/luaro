@@ -2,6 +2,7 @@
 #define ROLES_H
 
 #include "Teams.h"
+#include "Capabilities.h"
 
 // One suspicion score associated with a stable player ID.
 struct SuspicionEntry {
@@ -44,7 +45,7 @@ public:
 };
 
 // Seer owns its inspections array and copies it independently.
-class Seer : public VillageTeam {
+class Seer : public VillageTeam, public Inspector {
 private:
     InspectionResult* inspectionResults;
     int count;
@@ -63,11 +64,12 @@ public:
     InspectionResult getInspection(int index) const;
     void recordInspection(int playerId, RoleKind role);
     bool receiveInspection(int targetId, RoleKind role) override;
+    bool inspect(World& world, int targetId) override;
     int nightOrder() const override;
 };
 
 // Witch owns its potions used array and copies it independently.
-class Witch : public VillageTeam {
+class Witch : public VillageTeam, public PotionUser {
 private:
     PotionUse* potionLog;
     int count;
@@ -88,6 +90,7 @@ public:
     bool hasPoisonPotion() const;
     bool recordPotionUse(int targetId, bool healing);
     bool spendPotion(int targetId, bool healing) override;
+    bool usePotion(World& world, int targetId, bool healing) override;
     int nightOrder() const override;
 };
 

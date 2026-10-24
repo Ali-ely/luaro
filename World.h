@@ -90,6 +90,8 @@ public:
     // Ownership transfers on entry, including when enqueueing throws.
     void enqueueEvent(Event* event);
     bool addManualEvent(EventKind kind, int sourceId, int targetId);
+    bool requestInspection(int sourceId, int targetId);
+    bool requestPotion(int sourceId, int targetId, bool healing);
     int pendingEventCount() const;
     void viewPendingEvents() const;
     void processEvents();

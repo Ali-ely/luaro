@@ -1,5 +1,5 @@
 /*
-Loup-Garou SimWorld - M6: player management and undo.
+Loup-Garou SimWorld - M7: optional inspection and potion capabilities.
 Team members: names have not yet been supplied.
 World: a village simulation with alternating Night and Day turns.
 
@@ -7,6 +7,7 @@ Hierarchy:
 Player (abstract)
   VillageTeam (abstract): Villager, Seer, Witch, Hunter
   WolfTeam (abstract): Werewolf, AlphaWolf
+Seer also implements Inspector; Witch also implements PotionUser.
 
 Feature mapping confirmed by the supplied gaps/design documents:
 F4: phase-dependent actions and event effects.
@@ -17,8 +18,8 @@ F11: win detection and statistics are planned for M9.
 The complete original numbered specification is needed to verify other labels.
 
 Build from the repository root (create build/ first):
-g++ -std=c++17 -Wall Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp main.cpp -o build/simworld
-Tests: see README.md and tests/m1_tests.cpp through tests/m6_tests.cpp.
+g++ -std=c++17 -Wall Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp main.cpp -o build/simworld
+Tests: see README.md and tests/m1_tests.cpp through tests/m7_tests.cpp.
 
 AI usage log:
 2026-10-23: Codex helped consolidate the supplied design, gaps, and course limits.
@@ -31,6 +32,7 @@ AI usage log:
 2026-10-24: User approved M4. Codex added events, role effects, menu, tests, and docs.
 2026-10-24: User approved M5. Codex added player management and validation tests.
 2026-10-24: User approved M6. Codex added undo commands, snapshot ownership, tests, and docs.
+2026-10-24: User approved M7. Codex added capability interfaces, checked casts, menu actions, and tests.
 */
 
 
@@ -114,12 +116,13 @@ bool managePlayer(World& world, int choice) {
 void runEventMenu(World& world) {
     int choice;
     while (true) {
-        std::cout << "\nM6 players and events | Next phase: "
+        std::cout << "\nM7 players and events | Next phase: "
                   << (world.getPhase() == NIGHT ? "Night" : "Day")
                   << " | Undoable edits: " << world.undoCount()
                   << "\n1 List players\n2 View pending events\n3 Add event\n"
                   << "4 Run one turn\n5 Run several turns\n6 Create player\n"
-                  << "7 Delete player\n8 Duplicate player\n9 Modify player\n10 Undo\n0 Quit\n";
+                  << "7 Delete player\n8 Duplicate player\n9 Modify player\n10 Undo\n"
+                  << "11 Inspect using a player\n12 Use a potion\n0 Quit\n";
         if (!readInteger("Choice: ", choice) || choice == 0) { return; }
         if (choice == 1) { world.describePlayers(); }
         else if (choice == 2) { world.viewPendingEvents(); }
@@ -157,7 +160,26 @@ void runEventMenu(World& world) {
             try { world.undo(); }
             catch (const std::exception& error) { std::cout << "Undo failed: " << error.what() << '\n'; }
         }
-        else { std::cout << "Choose a menu option from 0 to 10.\n"; }
+        else if (choice == 11 || choice == 12) {
+            int source, target, potion = 1;
+            if (!readInteger("Acting player ID: ", source) ||
+                !readInteger("Target ID: ", target)) { return; }
+            if (choice == 12) {
+                if (!readInteger("1 Heal, 2 Poison: ", potion)) { return; }
+                if (potion != 1 && potion != 2) {
+                    std::cout << "Choose potion 1 or 2.\n";
+                    continue;
+                }
+            }
+            try {
+                const bool queued = choice == 11 ? world.requestInspection(source, target)
+                    : world.requestPotion(source, target, potion == 1);
+                if (queued) { std::cout << "Special action queued. Run a turn to apply it.\n"; }
+            } catch (const std::exception& error) {
+                std::cout << "Special action failed: " << error.what() << '\n';
+            }
+        }
+        else { std::cout << "Choose a menu option from 0 to 12.\n"; }
     }
 }
 
@@ -179,7 +201,11 @@ int main(int argc, char* argv[]) {
     world.clearUndoHistory(); // The sample village is setup, not an administrator edit.
     if (argc == 2) {
         world.describePlayers();
-        world.addManualEvent(REVEAL_EVENT, 2, 5);
+        world.requestInspection(3, 5); // Unsupported capabilities fail safely.
+        world.requestPotion(3, 5, true);
+        world.requestInspection(2, 5);
+        world.requestPotion(1, 1, true);
+        world.requestPotion(1, 5, false);
         world.viewPendingEvents();
         world.runTurns(2);
         world.viewPendingEvents();

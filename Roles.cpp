@@ -137,7 +137,7 @@ Seer::Seer(int id, const std::string& name)
 }
 
 Seer::Seer(const Seer& other)
-    : VillageTeam(other), inspectionResults(copyArray(other.inspectionResults, other.count)),
+    : VillageTeam(other), Inspector(other), inspectionResults(copyArray(other.inspectionResults, other.count)),
       count(other.count) {
 }
 
@@ -219,7 +219,7 @@ Witch::Witch(int id, const std::string& name)
 }
 
 Witch::Witch(const Witch& other)
-    : VillageTeam(other), potionLog(copyArray(other.potionLog, other.count)),
+    : VillageTeam(other), PotionUser(other), potionLog(copyArray(other.potionLog, other.count)),
       count(other.count) {
 }
 
@@ -523,6 +523,10 @@ bool Seer::receiveInspection(int targetId, RoleKind role) {
     return true;
 }
 
+bool Seer::inspect(World& world, int targetId) {
+    return world.addManualEvent(REVEAL_EVENT, getId(), targetId);
+}
+
 bool Witch::hasHealingPotion() const {
     for (int i = 0; i < count; ++i) {
         if (potionLog[i].healing) {
@@ -554,6 +558,14 @@ bool Witch::recordPotionUse(int targetId, bool healing) {
 int Witch::nightOrder() const { return 0; }
 
 bool Witch::spendPotion(int targetId, bool healing) { return recordPotionUse(targetId, healing); }
+
+bool Witch::usePotion(World& world, int targetId, bool healing) {
+    if ((healing && !hasHealingPotion()) || (!healing && !hasPoisonPotion())) {
+        world.reportEvent(healing ? "No healing potion remains." : "No poison potion remains.");
+        return false;
+    }
+    return world.addManualEvent(healing ? HEAL_EVENT : POISON_EVENT, getId(), targetId);
+}
 
 void Hunter::recordShot(int targetId) {
     requirePlayerId(targetId);
