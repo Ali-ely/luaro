@@ -1,7 +1,7 @@
 /*
-Loup-Garou SimWorld - M1: player hierarchy and independent copying.
+Loup-Garou SimWorld - M3: world ownership and Night/Day turns.
 Team members: names have not yet been supplied.
-World: a village simulation with alternating Night and Day turns (M3 onward).
+World: a village simulation with alternating Night and Day turns.
 
 Hierarchy:
 Player (abstract)
@@ -9,16 +9,16 @@ Player (abstract)
   WolfTeam (abstract): Werewolf, AlphaWolf
 
 Feature mapping confirmed by the supplied gaps/design documents:
-F4: role action contracts in M1; phase behavior follows in M3/M4.
+F4: phase-dependent action messages in M3; event effects follow in M4.
 F6: event queue and ordered healing are planned for M4.
 F7: identity-preserving clone in M1; commands/undo follow in M5/M6.
-F10: deep copying and virtual destruction in M1; event ownership follows in M4.
+F10: deep copying, virtual destruction, and World player ownership; events follow in M4.
 F11: win detection and statistics are planned for M9.
 The complete original numbered specification is needed to verify other labels.
 
 Build from the repository root (create build/ first):
-g++ -std=c++17 -Wall Player.cpp Teams.cpp Roles.cpp main.cpp -o build/simworld
-Tests: see README.md and tests/m1_tests.cpp.
+g++ -std=c++17 -Wall Player.cpp Teams.cpp Roles.cpp World.cpp main.cpp -o build/simworld
+Tests: see README.md and tests/m1_tests.cpp through tests/m3_tests.cpp.
 
 AI usage log:
 2026-10-23: Codex helped consolidate the supplied design, gaps, and course limits.
@@ -26,43 +26,45 @@ AI usage log:
            demonstration, documentation, and ownership tests for user review.
 2026-10-24: User approved M2. Codex added custom array-based Stack and Queue
            templates, standalone tests/demo, and the M2 walkthrough.
+2026-10-24: User approved M3. Codex added World ownership, unique IDs, phase
+           tracking, virtual turn dispatch, role messages, and M3 tests/docs.
 */
 
-#include "Roles.h"
+#include "World.h"
 
 #include <iostream>
 
 int main() {
-    Villager villager(1, "Alice");
-    villager.setSuspicion(5, 7);
-    Seer seer(2, "Basil");
-    seer.recordInspection(5, WEREWOLF_ROLE);
-    Witch witch(3, "Clara");
-    witch.recordPotionUse(1, true);
-    Hunter hunter(4, "Dalia");
-    hunter.recordShot(5);
-    Werewolf wolf(5, "Elias");
-    wolf.recordTarget(1);
-    AlphaWolf alpha(6, "Farah");
-    alpha.addPackMember(5);
+    World world;
+    // Creation order deliberately differs from night priority order.
+    world.createPlayer(ALPHA_WOLF_ROLE, "Farah");
+    int aliceId = world.createPlayer(VILLAGER_ROLE, "Alice");
+    world.createPlayer(WEREWOLF_ROLE, "Elias");
+    int hunterId = world.createPlayer(HUNTER_ROLE, "Dalia");
+    world.createPlayer(WITCH_ROLE, "Clara");
+    world.createPlayer(SEER_ROLE, "Basil");
 
-    // These pointers borrow stack objects; they must not be deleted.
-    Player* players[] = {&villager, &seer, &witch, &hunter, &wolf, &alpha};
-    std::cout << "M1: all six roles, described through Player pointers\n";
-    for (int i = 0; i < 6; ++i) {
-        players[i]->describe(std::cout);
-    }
+    std::cout << "M3: players in their original list order\n";
+    world.describePlayers();
+    std::cout << "\nRun one turn:\n";
+    world.runTurn();
+    std::cout << "\nRun the next three turns:\n";
+    world.runTurns(3);
+    std::cout << "Completed turns: " << world.getCompletedTurns()
+              << "; completed rounds: " << world.getCompletedRounds() << '\n';
 
-    std::cout << "\nIndependent copy demonstration (same ID is intentional):\n";
-    Villager* copy = villager.clone();
-    copy->setName("Alice's independent copy");
-    copy->setSuspicion(5, 99);
-    villager.describe(std::cout);
-    copy->describe(std::cout);
-    // Unlike the borrowed pointers above, clone() returns a new owned object.
-    Player* ownedCopy = copy;
-    delete ownedCopy;
+    std::cout << "\nMark Alice dead for the skip demonstration, then run one turn:\n";
+    world.findPlayer(aliceId)->setAlive(false);
+    world.runTurn();
+    std::cout << "\nDead players remain listed:\n";
+    world.describePlayers();
 
-    std::cout << "\nM1 only: turn actions and the interactive menu arrive later.\n";
+    std::cout << "\nRemove Dalia administratively (no death reaction):\n";
+    world.removePlayer(hunterId);
+    int newId = world.createPlayer(VILLAGER_ROLE, "Gamal");
+    std::cout << "New player ID: " << newId << " (removed IDs are not reused).\n";
+    world.describePlayers();
+    std::cout << "\nM3 only: actions are messages. Event effects arrive in M4.\n";
+    // World automatically deletes all remaining owned players here.
     return 0;
 }

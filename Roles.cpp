@@ -1,4 +1,5 @@
 #include "Roles.h"
+#include "World.h"
 
 #include <limits>
 #include <ostream>
@@ -94,9 +95,12 @@ void Villager::describe(std::ostream& output) const {
     output << '\n';
 }
 
-void Villager::act(World&) {
-    // M3/M4 will connect this role's action to World and events.
-    // Observe at night; vote using suspicion during the day.
+void Villager::act(World& world) {
+    if (world.getPhase() == NIGHT) {
+        world.reportAction(*this, "Villager observes the village for suspicious activity.");
+    } else {
+        world.reportAction(*this, "Villager weighs suspicion scores for a day vote.");
+    }
 }
 
 int Villager::getSuspicionCount() const { return count; }
@@ -152,9 +156,12 @@ void Seer::describe(std::ostream& output) const {
     output << '\n';
 }
 
-void Seer::act(World&) {
-    // M3/M4 will connect this role's action to World and events.
-    // Inspect at night; use inspection knowledge when voting during the day.
+void Seer::act(World& world) {
+    if (world.getPhase() == NIGHT) {
+        world.reportAction(*this, "Seer prepares a secret role inspection.");
+    } else {
+        world.reportAction(*this, "Seer consults inspection results for a day vote.");
+    }
 }
 
 int Seer::getInspectionCount() const { return count; }
@@ -210,9 +217,16 @@ void Witch::describe(std::ostream& output) const {
     output << '\n';
 }
 
-void Witch::act(World&) {
-    // M3/M4 will connect this role's action to World and events.
-    // Use available potions at night; cast a normal vote during the day.
+void Witch::act(World& world) {
+    if (world.getPhase() == NIGHT) {
+        std::string action = "Witch checks night potions: healing ";
+        action += hasHealingPotion() ? "available" : "spent";
+        action += ", poison ";
+        action += hasPoisonPotion() ? "available." : "spent.";
+        world.reportAction(*this, action);
+    } else {
+        world.reportAction(*this, "Witch prepares a normal day vote and saves potions for night.");
+    }
 }
 
 int Witch::getPotionUseCount() const { return count; }
@@ -268,9 +282,12 @@ void Hunter::describe(std::ostream& output) const {
     output << '\n';
 }
 
-void Hunter::act(World&) {
-    // M3/M4 will connect this role's action to World and events.
-    // Prepare retaliation at night; vote during the day.
+void Hunter::act(World& world) {
+    if (world.getPhase() == NIGHT) {
+        world.reportAction(*this, "Hunter stands watch and prepares retaliation.");
+    } else {
+        world.reportAction(*this, "Hunter prepares a day vote and keeps a final shot ready.");
+    }
 }
 
 int Hunter::getShotCount() const { return count; }
@@ -326,9 +343,12 @@ void Werewolf::describe(std::ostream& output) const {
     output << '\n';
 }
 
-void Werewolf::act(World&) {
-    // M3/M4 will connect this role's action to World and events.
-    // Attack the pack victim at night; vote against the village during the day.
+void Werewolf::act(World& world) {
+    if (world.getPhase() == NIGHT) {
+        world.reportAction(*this, "Werewolf prepares to attack the pack's chosen victim.");
+    } else {
+        world.reportAction(*this, "Werewolf plans a day vote against the village.");
+    }
 }
 
 int Werewolf::getTargetCount() const { return count; }
@@ -384,9 +404,12 @@ void AlphaWolf::describe(std::ostream& output) const {
     output << '\n';
 }
 
-void AlphaWolf::act(World&) {
-    // M3/M4 will connect this role's action to World and events.
-    // Attack with the pack at night; cast a double-weight vote during the day.
+void AlphaWolf::act(World& world) {
+    if (world.getPhase() == NIGHT) {
+        world.reportAction(*this, "AlphaWolf coordinates the pack's night attack.");
+    } else {
+        world.reportAction(*this, "AlphaWolf prepares a double-weight day vote.");
+    }
 }
 
 int AlphaWolf::getPackMemberCount() const { return count; }

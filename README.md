@@ -4,13 +4,38 @@ A turn-based C++ console simulation of a werewolf village, planned for CSCE 1101
 
 ## Status
 
-M1 and M2 are implemented: the player hierarchy and all six roles, plus custom
-dynamic-array Stack and Queue templates with independent tests and demonstrations.
-The user approved starting M2 after M1 on 2026-10-24. M2 is ready for review;
-M3 has not started.
+M1 through M3 are implemented: the player hierarchy, custom Stack and Queue, and
+a World that owns players and runs Night/Day turns through virtual actions.
+The user approved starting M3 on 2026-10-24. M3 is ready for review; M4 has not started.
 
-`act(World&)` and Hunter's `onDeath(World&)` are intentionally empty hooks:
-World arrives in M3, and event effects arrive in M4. This is not yet a playable game.
+Each role now prints a distinct action for each phase. Events, actual attacks,
+inspection results, healing, and votes arrive in M4; Hunter's death hook remains
+empty until then. This is not yet a complete playable game.
+
+## Build and try M3
+
+On this Windows machine, run from the repository root:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m3.ps1
+```
+
+This builds and runs the World tests and the current `main.cpp` demonstration.
+It uses g++ from PATH or the installed Qt MinGW compiler. The demonstration shows
+night priorities, day order, one/multiple turns, dead-player skipping, removal,
+and unique IDs. No interactive input is required yet.
+
+For a standard g++ environment, first create `build/`, then run:
+
+```sh
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp main.cpp -o build/simworld
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp tests/m3_tests.cpp -o build/m3_tests
+./build/m3_tests
+./build/simworld
+```
+
+Read [the M3 walkthrough](docs/M3.md) for ownership, ID generation, turn order,
+phase bookkeeping, and the distinction between dead and removed players.
 
 ## Build and try M2
 
@@ -51,10 +76,10 @@ only to this process; it does not change the machine's settings.
 For a standard g++ environment, first create `build/`, then run:
 
 ```sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp main.cpp -o build/simworld
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp tests/m1_tests.cpp -o build/m1_tests
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp examples/m1_demo.cpp -o build/m1_demo
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp tests/m1_tests.cpp -o build/m1_tests
 ./build/m1_tests
-./build/simworld
+./build/m1_demo
 ```
 
 Read [the M1 walkthrough](docs/M1.md) for the file responsibilities, copy examples,
@@ -162,3 +187,8 @@ invalid indices/values, and deletion through `Player*`.
 M2 tests cover LIFO/FIFO order, safe empty operations, repeated growth and queue
 wraparound, non-destructive viewing, independent copies, strings and pointer
 values, and cleanup when element copying throws an exception.
+
+M3 tests cover all six role messages in both phases, night priorities, stable
+player order, unique IDs, safe removal, dead-player skipping, zero/negative turn
+requests, empty/all-dead worlds, multi-turn counting, counter overflow, output
+failure recovery, vector growth, and ownership cleanup.

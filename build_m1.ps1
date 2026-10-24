@@ -14,13 +14,13 @@ New-Item -ItemType Directory -Path build -Force | Out-Null
 $previousPath = $env:PATH
 try {
     $env:PATH = (Split-Path -Parent $compilerPath) + ';' + $previousPath
-    & $compilerPath -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp main.cpp -o build/simworld.exe
+    & $compilerPath -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp examples/m1_demo.cpp -o build/m1_demo.exe
     if ($LASTEXITCODE -ne 0) { throw 'The demo build failed.' }
-    & $compilerPath -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp tests/m1_tests.cpp -o build/m1_tests.exe
+    & $compilerPath -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp tests/m1_tests.cpp -o build/m1_tests.exe
     if ($LASTEXITCODE -ne 0) { throw 'The test build failed.' }
     & .\build\m1_tests.exe
     if ($LASTEXITCODE -ne 0) { throw 'M1 tests failed.' }
-    & .\build\simworld.exe
+    & .\build\m1_demo.exe
     if ($LASTEXITCODE -ne 0) { throw 'The demonstration failed.' }
 } finally {
     $env:PATH = $previousPath
