@@ -4,12 +4,19 @@
 #include "Player.h"
 #include "Queue.h"
 #include "Event.h"
+#include "Stack.h"
 
 #include <iosfwd>
 #include <string>
 #include <vector>
 
 enum Phase { NIGHT, DAY };
+
+class Command;
+class CreateCmd;
+class DuplicateCmd;
+class DeleteCmd;
+class ModifyCmd;
 
 // A valid ballot; IDs stay safe even if players later die or are removed.
 struct Ballot {
@@ -21,6 +28,10 @@ struct Ballot {
 // Owns the village's players and runs phase-dependent actions polymorphically.
 // The output stream is borrowed and must outlive this World.
 class World {
+    friend class CreateCmd;
+    friend class DuplicateCmd;
+    friend class DeleteCmd;
+    friend class ModifyCmd;
 private:
     std::vector<Player*> players;
     int nextId;
@@ -29,6 +40,7 @@ private:
     bool runningTurn;
     bool resolvingEvents;
     Queue<Event*> events;
+    Stack<Command*> history;
     std::vector<Ballot> ballots;
     int packTargetId;
     std::ostream& output;
@@ -36,6 +48,11 @@ private:
     void discardPendingEvents();
     void tallyVotes();
     void clearProtection();
+    void discardHistory();
+    void remember(Command* command);
+    void eraseForUndo(int id);
+    void insertForUndo(Player* snapshot, int position);
+    void replaceForUndo(Player* snapshot, int position);
 
 public:
     World();
@@ -52,6 +69,9 @@ public:
     bool removePlayer(int id);
     int duplicatePlayer(int id); // Returns 0 for an unknown ID.
     bool modifyPlayer(int id, const std::string& name, bool alive, bool protectedFlag);
+    bool undo();
+    int undoCount() const;
+    void clearUndoHistory();
     Player* findPlayer(int id);
     const Player* findPlayer(int id) const;
     const Player* playerAt(int index) const;

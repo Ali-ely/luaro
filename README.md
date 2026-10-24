@@ -4,9 +4,29 @@ A turn-based C++ console simulation of a werewolf village, planned for CSCE 1101
 
 ## Status
 
-M1 through M5 are implemented: players, containers, World turns, event effects,
-and player management. M5 adds default/custom creation, deletion, duplication
-with new IDs, and validated edits. M6 undo has not started.
+M1 through M6 are implemented: players, containers, World turns, event effects,
+player management, and multi-level undo. M7 special capabilities have not started.
+
+## Build and try M6
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m6.ps1
+```
+
+Add `-Interactive` to open the menu after testing. Option **10** undoes the last
+successful create, delete, duplicate, or modify action. Starting a turn clears
+editing history. The unattended demo restores a deleted Seer, reverses its
+modification, and removes its duplicate through undo.
+Read [the M6 walkthrough](docs/M6.md) for ownership, restoration, and a menu exercise.
+
+For standard g++, create `build/` and run:
+
+```sh
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp main.cpp -o build/simworld
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp tests/m6_tests.cpp -o build/m6_tests
+./build/m6_tests
+./build/simworld
+```
 
 ## Build and try M5
 
@@ -22,8 +42,8 @@ Read [the M5 walkthrough](docs/M5.md) for the API and a step-by-step menu exerci
 For standard g++, create `build/` and run:
 
 ```sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp main.cpp -o build/simworld
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp tests/m5_tests.cpp -o build/m5_tests
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp main.cpp -o build/simworld
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp tests/m5_tests.cpp -o build/m5_tests
 ./build/m5_tests
 ./build/simworld
 ```
@@ -43,8 +63,8 @@ same application also includes player-management options.
 For standard g++, create build/ and run:
 
 ~~~sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp main.cpp -o build/simworld
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp tests/m4_tests.cpp -o build/m4_tests
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp main.cpp -o build/simworld
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp tests/m4_tests.cpp -o build/m4_tests
 ./build/m4_tests
 ./build/simworld
 ~~~
@@ -99,8 +119,8 @@ only to this process; it does not change the machine's settings.
 For a standard g++ environment, first create `build/`, then run:
 
 ```sh
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp examples/m1_demo.cpp -o build/m1_demo
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp tests/m1_tests.cpp -o build/m1_tests
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp examples/m1_demo.cpp -o build/m1_demo
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp tests/m1_tests.cpp -o build/m1_tests
 ./build/m1_tests
 ./build/m1_demo
 ```

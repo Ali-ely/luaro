@@ -1,5 +1,5 @@
 /*
-Loup-Garou SimWorld - M5: player management.
+Loup-Garou SimWorld - M6: player management and undo.
 Team members: names have not yet been supplied.
 World: a village simulation with alternating Night and Day turns.
 
@@ -11,14 +11,14 @@ Player (abstract)
 Feature mapping confirmed by the supplied gaps/design documents:
 F4: phase-dependent actions and event effects.
 F6: owned FIFO event queue and ordered healing.
-F7: identity-preserving clone and duplication with new IDs; undo follows in M6.
-F10: deep copying, virtual destruction, and World player ownership; event ownership in M4.
+F7: identity-preserving snapshots and multi-level undo with exact list restoration.
+F10: deep copies, virtual destruction, and ownership of players, events, and command snapshots.
 F11: win detection and statistics are planned for M9.
 The complete original numbered specification is needed to verify other labels.
 
 Build from the repository root (create build/ first):
-g++ -std=c++17 -Wall Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp main.cpp -o build/simworld
-Tests: see README.md and tests/m1_tests.cpp through tests/m5_tests.cpp.
+g++ -std=c++17 -Wall Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp main.cpp -o build/simworld
+Tests: see README.md and tests/m1_tests.cpp through tests/m6_tests.cpp.
 
 AI usage log:
 2026-10-23: Codex helped consolidate the supplied design, gaps, and course limits.
@@ -30,6 +30,7 @@ AI usage log:
            tracking, virtual turn dispatch, role messages, and M3 tests/docs.
 2026-10-24: User approved M4. Codex added events, role effects, menu, tests, and docs.
 2026-10-24: User approved M5. Codex added player management and validation tests.
+2026-10-24: User approved M6. Codex added undo commands, snapshot ownership, tests, and docs.
 */
 
 
@@ -113,11 +114,12 @@ bool managePlayer(World& world, int choice) {
 void runEventMenu(World& world) {
     int choice;
     while (true) {
-        std::cout << "\nM5 players and events | Next phase: "
+        std::cout << "\nM6 players and events | Next phase: "
                   << (world.getPhase() == NIGHT ? "Night" : "Day")
+                  << " | Undoable edits: " << world.undoCount()
                   << "\n1 List players\n2 View pending events\n3 Add event\n"
                   << "4 Run one turn\n5 Run several turns\n6 Create player\n"
-                  << "7 Delete player\n8 Duplicate player\n9 Modify player\n0 Quit\n";
+                  << "7 Delete player\n8 Duplicate player\n9 Modify player\n10 Undo\n0 Quit\n";
         if (!readInteger("Choice: ", choice) || choice == 0) { return; }
         if (choice == 1) { world.describePlayers(); }
         else if (choice == 2) { world.viewPendingEvents(); }
@@ -151,7 +153,11 @@ void runEventMenu(World& world) {
             try { if (!managePlayer(world, choice)) { return; } }
             catch (const std::exception& error) { std::cout << "Player action failed: " << error.what() << '\n'; }
         }
-        else { std::cout << "Choose a menu option from 0 to 9.\n"; }
+        else if (choice == 10) {
+            try { world.undo(); }
+            catch (const std::exception& error) { std::cout << "Undo failed: " << error.what() << '\n'; }
+        }
+        else { std::cout << "Choose a menu option from 0 to 10.\n"; }
     }
 }
 
@@ -170,6 +176,7 @@ int main(int argc, char* argv[]) {
     world.createPlayer(ALPHA_WOLF_ROLE, "Farah");
     world.createPlayer(VILLAGER_ROLE, "Gamal");
     world.createPlayer(VILLAGER_ROLE, "Hana");
+    world.clearUndoHistory(); // The sample village is setup, not an administrator edit.
     if (argc == 2) {
         world.describePlayers();
         world.addManualEvent(REVEAL_EVENT, 2, 5);
@@ -182,7 +189,13 @@ int main(int argc, char* argv[]) {
         world.findPlayer(2)->describe(std::cout);
         world.findPlayer(duplicateId)->describe(std::cout);
         world.removePlayer(duplicateId);
-        std::cout << "Deleted duplicate; original remains.\n";
+        std::cout << "Undo delete, modify, and duplicate, newest first:\n";
+        world.undo();
+        world.findPlayer(duplicateId)->describe(std::cout);
+        world.undo();
+        world.findPlayer(duplicateId)->describe(std::cout);
+        world.undo();
+        world.undo(); // Safe empty-history demonstration.
         world.describePlayers();
     } else { runEventMenu(world); }
     return 0;

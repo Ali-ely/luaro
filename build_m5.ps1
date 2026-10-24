@@ -15,9 +15,9 @@ New-Item -ItemType Directory -Path build -Force | Out-Null
 $previousPath = $env:PATH
 try {
     $env:PATH = (Split-Path -Parent $compilerPath) + ';' + $previousPath
-    & $compilerPath -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp tests/m5_tests.cpp -o build/m5_tests.exe
+    & $compilerPath -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp tests/m5_tests.cpp -o build/m5_tests.exe
     if ($LASTEXITCODE -ne 0) { throw 'The M5 test build failed.' }
-    & $compilerPath -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp main.cpp -o build/simworld.exe
+    & $compilerPath -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp main.cpp -o build/simworld.exe
     if ($LASTEXITCODE -ne 0) { throw 'The M5 demonstration build failed.' }
     & .\build\m5_tests.exe
     if ($LASTEXITCODE -ne 0) { throw 'M5 tests failed.' }

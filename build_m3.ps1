@@ -14,9 +14,9 @@ New-Item -ItemType Directory -Path build -Force | Out-Null
 $previousPath = $env:PATH
 try {
     $env:PATH = (Split-Path -Parent $compilerPath) + ';' + $previousPath
-    & $compilerPath -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp tests/m3_tests.cpp -o build/m3_tests.exe
+    & $compilerPath -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp tests/m3_tests.cpp -o build/m3_tests.exe
     if ($LASTEXITCODE -ne 0) { throw 'The M3 test build failed.' }
-    & $compilerPath -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp examples/m3_demo.cpp -o build/m3_demo.exe
+    & $compilerPath -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp examples/m3_demo.cpp -o build/m3_demo.exe
     if ($LASTEXITCODE -ne 0) { throw 'The M3 demonstration build failed.' }
     & .\build\m3_tests.exe
     if ($LASTEXITCODE -ne 0) { throw 'M3 tests failed.' }

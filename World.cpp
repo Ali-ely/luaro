@@ -1,5 +1,6 @@
 #include "World.h"
 #include "Roles.h"
+#include "Command.h"
 
 #include <iostream>
 #include <limits>
@@ -16,6 +17,7 @@ World::World(std::ostream& output)
 }
 
 World::~World() {
+    discardHistory();
     discardPendingEvents();
     for (int i = 0; i < playerCount(); ++i) {
         delete players[i];
@@ -55,8 +57,16 @@ int World::createPlayer(RoleKind role, const std::string& name, bool alive, bool
     try {
         player->setAlive(alive);
         player->setProtected(protectedFlag);
-        players.push_back(player);
+        remember(new CreateCmd(nextId));
     } catch (...) {
+        delete player;
+        throw;
+    }
+    try { players.push_back(player); }
+    catch (...) {
+        Command* command = nullptr;
+        history.pop(command);
+        delete command;
         delete player;
         throw;
     }
@@ -80,8 +90,16 @@ int World::duplicatePlayer(int id) {
     if (nextId == 0) { throw std::overflow_error("No player IDs remain."); }
     Player* copy = source->clone();
     copy->id = nextId; // clone itself preserves identity for future undo snapshots.
-    try { players.push_back(copy); }
+    try { remember(new DuplicateCmd(nextId)); }
     catch (...) { delete copy; throw; }
+    try { players.push_back(copy); }
+    catch (...) {
+        Command* command = nullptr;
+        history.pop(command);
+        delete command;
+        delete copy;
+        throw;
+    }
     const int assignedId = nextId;
     nextId = nextId == std::numeric_limits<int>::max() ? 0 : nextId + 1;
     return assignedId;
@@ -96,8 +114,17 @@ bool World::modifyPlayer(int id, const std::string& name, bool alive, bool prote
     if (!alive && protectedFlag) {
         throw std::invalid_argument("A dead player cannot be protected.");
     }
-    // Validate/assign the possibly throwing string first, before changing flags.
-    player->setName(name);
+    int position = 0;
+    while (players[position] != player) { ++position; }
+    remember(new ModifyCmd(*player, position));
+    // If string validation/allocation fails, remove only this attempted edit.
+    try { player->setName(name); }
+    catch (...) {
+        Command* command = nullptr;
+        history.pop(command);
+        delete command;
+        throw;
+    }
     player->setAlive(alive);
     player->setProtected(protectedFlag);
     return true;
@@ -109,6 +136,7 @@ bool World::removePlayer(int id) {
     }
     for (int i = 0; i < playerCount(); ++i) {
         if (players[i]->getId() == id) {
+            remember(new DeleteCmd(*players[i], i));
             // Administrative removal is not a gameplay death: do not call onDeath.
             delete players[i];
             players.erase(players.begin() + i);
@@ -116,6 +144,70 @@ bool World::removePlayer(int id) {
         }
     }
     return false;
+}
+
+void World::remember(Command* command) {
+    try { history.push(command); }
+    catch (...) { delete command; throw; }
+}
+
+void World::discardHistory() {
+    Command* command = nullptr;
+    while (history.pop(command)) { delete command; }
+}
+
+void World::clearUndoHistory() {
+    if (runningTurn || resolvingEvents) {
+        throw std::logic_error("Undo history cannot be cleared during a turn.");
+    }
+    discardHistory();
+}
+
+int World::undoCount() const { return history.size(); }
+
+bool World::undo() {
+    if (runningTurn || resolvingEvents) {
+        throw std::logic_error("Undo is only available between turns.");
+    }
+    Command* command = nullptr;
+    if (!history.peek(command)) {
+        output << "Nothing to undo.\n";
+        return false;
+    }
+    // Keep the command on the stack if output or restoration fails.
+    output << "Undo last player edit.\n";
+    command->undo(*this);
+    history.pop(command);
+    delete command;
+    return true;
+}
+
+void World::eraseForUndo(int id) {
+    for (int i = 0; i < playerCount(); ++i) {
+        if (players[i]->getId() == id) {
+            delete players[i];
+            players.erase(players.begin() + i);
+            return;
+        }
+    }
+    throw std::logic_error("Undo player is missing.");
+}
+
+void World::insertForUndo(Player* snapshot, int position) {
+    if (snapshot == nullptr || position < 0 || position > playerCount()
+        || findPlayer(snapshot->getId()) != nullptr) {
+        throw std::logic_error("Cannot restore the saved player position or ID.");
+    }
+    players.insert(players.begin() + position, snapshot);
+}
+
+void World::replaceForUndo(Player* snapshot, int position) {
+    if (snapshot == nullptr || position < 0 || position >= playerCount()
+        || players[position]->getId() != snapshot->getId()) {
+        throw std::logic_error("Cannot restore the saved player state.");
+    }
+    delete players[position];
+    players[position] = snapshot;
 }
 
 Player* World::findPlayer(int id) {
@@ -183,6 +275,7 @@ bool World::runTurn() {
         throw std::overflow_error("The turn counter is full.");
     }
 
+    discardHistory(); // Gameplay cannot be undone as a player-management edit.
     runningTurn = true;
     try {
         output << "Turn " << completedTurns + 1 << " - "
@@ -287,6 +380,8 @@ void World::processEvents() {
     if (resolvingEvents) {
         throw std::logic_error("Events are already being resolved.");
     }
+    // This low-level helper can also apply gameplay outside runTurn.
+    if (!events.isEmpty()) { discardHistory(); }
     resolvingEvents = true;
     Event* event = nullptr;
     try {
