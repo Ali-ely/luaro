@@ -119,11 +119,13 @@ void Console::showMenu() const {
            << (world.getPhase() == NIGHT ? "Night" : "Day")
            << " | Turns: " << world.getCompletedTurns()
            << " | Rounds: " << world.getCompletedRounds()
+           << " | Result: " << world.resultText()
            << " | Undoable edits: " << world.undoCount()
            << "\n1 List players\n2 View pending events\n3 Add event\n"
            << "4 Run one turn\n5 Run several turns\n6 Create player\n"
            << "7 Delete player\n8 Duplicate player\n9 Modify player\n10 Undo\n"
-           << "11 Ask a player to inspect\n12 Use a potion\n13 Show player details\n0 Quit\n";
+           << "11 Ask a player to inspect\n12 Use a potion\n13 Show player details\n"
+           << "14 Show statistics\n0 Quit\n";
 }
 
 bool Console::perform(int choice) {
@@ -144,6 +146,7 @@ bool Console::perform(int choice) {
         case 7: case 8: case 9: case 13: return managePlayer(choice);
         case 10: world.undo(); break;
         case 11: case 12: return specialAction(choice);
+        case 14: world.describeStatistics(); break;
     }
     return true;
 }
@@ -152,7 +155,7 @@ void Console::run() {
     while (true) {
         showMenu();
         int choice = 0;
-        if (!readInteger("Choice (0-13): ", 0, 13, choice)) {
+        if (!readInteger("Choice (0-14): ", 0, 14, choice)) {
             output << "\nEnd of input. Goodbye.\n";
             return;
         }

@@ -4,9 +4,30 @@ A turn-based C++ console simulation of a werewolf village, planned for CSCE 1101
 
 ## Status
 
-M1 through M8 are implemented, including the complete console menu, player
-management, undo, events, and optional inspection/potion capabilities. M9 adds
-win conditions and complete game statistics.
+M1 through M9 are implemented, including victory/draw detection and cumulative
+statistics. M10 final verification and documentation cleanup remains.
+
+## Build and try M9
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build_m9.ps1
+```
+
+Add `-Interactive` to use the console after testing. Option **14** displays the
+current result, completed turns/rounds, ballot count, weighted vote total, and
+elimination history. Final statistics print automatically when a game ends.
+Batches stop at victory or draw. Successful player-management edits reopen the
+simulation while preserving its cumulative statistics.
+Read [the M9 walkthrough](docs/M9.md) for outcome timing and counting rules.
+
+For standard g++, create `build/` and run:
+
+```sh
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp main.cpp -o build/simworld
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -I. Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp tests/m9_tests.cpp -o build/m9_tests
+./build/m9_tests
+./build/simworld
+```
 
 ## Build and try M8
 

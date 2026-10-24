@@ -7,12 +7,14 @@
 #include <stdexcept>
 
 World::World()
-    : nextId(1), phase(NIGHT), completedTurns(0), runningTurn(false),
+    : nextId(1), phase(NIGHT), completedTurns(0), result(GAME_ONGOING),
+      totalBallots(0), totalVoteWeight(0), runningTurn(false),
       resolvingEvents(false), packTargetId(-1), output(std::cout) {
 }
 
 World::World(std::ostream& output)
-    : nextId(1), phase(NIGHT), completedTurns(0), runningTurn(false),
+    : nextId(1), phase(NIGHT), completedTurns(0), result(GAME_ONGOING),
+      totalBallots(0), totalVoteWeight(0), runningTurn(false),
       resolvingEvents(false), packTargetId(-1), output(output) {
 }
 
@@ -78,6 +80,7 @@ int World::createPlayer(RoleKind role, const std::string& name, bool alive, bool
     } else {
         ++nextId;
     }
+    result = GAME_ONGOING;
     return assignedId;
 }
 
@@ -102,6 +105,7 @@ int World::duplicatePlayer(int id) {
     }
     const int assignedId = nextId;
     nextId = nextId == std::numeric_limits<int>::max() ? 0 : nextId + 1;
+    result = GAME_ONGOING;
     return assignedId;
 }
 
@@ -127,6 +131,7 @@ bool World::modifyPlayer(int id, const std::string& name, bool alive, bool prote
     }
     player->setAlive(alive);
     player->setProtected(protectedFlag);
+    result = GAME_ONGOING;
     return true;
 }
 
@@ -140,6 +145,7 @@ bool World::removePlayer(int id) {
             // Administrative removal is not a gameplay death: do not call onDeath.
             delete players[i];
             players.erase(players.begin() + i);
+            result = GAME_ONGOING;
             return true;
         }
     }
@@ -179,6 +185,7 @@ bool World::undo() {
     command->undo(*this);
     history.pop(command);
     delete command;
+    result = GAME_ONGOING;
     return true;
 }
 
@@ -262,10 +269,66 @@ void World::describePlayers() const {
 Phase World::getPhase() const { return phase; }
 int World::getCompletedTurns() const { return completedTurns; }
 int World::getCompletedRounds() const { return completedTurns / 2; }
+GameResult World::getResult() const { return result; }
+bool World::isFinished() const { return result != GAME_ONGOING; }
+
+const char* World::resultText() const {
+    switch (result) {
+        case VILLAGE_WIN: return "Villagers win";
+        case WOLF_WIN: return "Wolves win";
+        case GAME_DRAW: return "Draw (no survivors)";
+        default: return "In progress";
+    }
+}
+
+long long World::getTotalBallots() const { return totalBallots; }
+long long World::getTotalVoteWeight() const { return totalVoteWeight; }
+int World::killCount() const { return static_cast<int>(kills.size()); }
+
+KillRecord World::killAt(int index) const {
+    if (index < 0 || index >= killCount()) { throw std::out_of_range("Kill index is out of range."); }
+    return kills[index];
+}
+
+void World::checkVictory() {
+    int wolves = 0, village = 0;
+    for (int i = 0; i < playerCount(); ++i) {
+        if (players[i]->isAlive()) {
+            if (players[i]->isWolf()) { ++wolves; }
+            else { ++village; }
+        }
+    }
+    if (wolves == 0 && village == 0) { result = GAME_DRAW; }
+    else if (wolves == 0) { result = VILLAGE_WIN; }
+    else if (wolves >= village) { result = WOLF_WIN; }
+    else { result = GAME_ONGOING; }
+}
+
+void World::describeStatistics() const {
+    output << "\nSimulation statistics\nResult: " << resultText()
+           << "\nTurns completed: " << completedTurns
+           << "\nRounds completed: " << getCompletedRounds()
+           << "\nBallots cast: " << totalBallots
+           << "\nWeighted vote total: " << totalVoteWeight
+           << "\nEliminations: " << killCount() << '\n';
+    for (int i = 0; i < killCount(); ++i) {
+        const KillRecord& record = kills[i];
+        output << "  ";
+        if (record.turnNumber == 0) { output << "Between turns"; }
+        else { output << "Turn " << record.turnNumber; }
+        output << " (" << (record.phase == NIGHT ? "Night" : "Day") << "): "
+               << record.sourceName << " [" << record.sourceId << "] -> "
+               << record.targetName << " [" << record.targetId << "] by " << record.cause << '\n';
+    }
+}
 
 bool World::runTurn() {
     if (runningTurn || resolvingEvents) {
         throw std::logic_error("A turn is already running.");
+    }
+    if (isFinished()) {
+        output << "Game already finished: " << resultText() << ". Make a player edit to continue.\n";
+        return false;
     }
     if (livingPlayerCount() == 0) {
         output << "No living players; the turn did not advance.\n";
@@ -317,6 +380,8 @@ bool World::runTurn() {
     ++completedTurns;
     phase = phase == NIGHT ? DAY : NIGHT;
     runningTurn = false;
+    checkVictory(); // All queued actions, tally eliminations, and Hunter chains are done.
+    if (isFinished()) { describeStatistics(); }
     return true;
 }
 
@@ -333,6 +398,7 @@ int World::runTurns(int numberOfTurns) {
             break;
         }
         ++completed;
+        if (isFinished()) { break; }
     }
     return completed;
 }
@@ -348,6 +414,10 @@ void World::reportEvent(const std::string& message) {
 void World::enqueueEvent(Event* event) {
     if (event == nullptr) {
         throw std::invalid_argument("Cannot enqueue a null event.");
+    }
+    if (isFinished()) {
+        delete event; // The ownership-transfer promise also applies to rejection.
+        throw std::logic_error("Game finished. Make a player edit before adding events.");
     }
     try {
         events.enqueue(event);
@@ -410,6 +480,10 @@ bool World::addManualEvent(EventKind kind, int sourceId, int targetId) {
     if (runningTurn || resolvingEvents) {
         throw std::logic_error("Manual events can only be added between turns.");
     }
+    if (isFinished()) {
+        reportEvent("Game finished. Make a player edit before adding events.");
+        return false;
+    }
     Player* source = findPlayer(sourceId);
     Player* target = findPlayer(targetId);
     if (source == nullptr || target == nullptr || !source->isAlive() || !target->isAlive()) {
@@ -453,6 +527,10 @@ bool World::requestInspection(int sourceId, int targetId) {
     if (runningTurn || resolvingEvents) {
         throw std::logic_error("Special actions are only available between turns.");
     }
+    if (isFinished()) {
+        reportEvent("Game finished. Make a player edit before requesting special actions.");
+        return false;
+    }
     Player* source = findPlayer(sourceId);
     if (source == nullptr) {
         reportEvent("Unknown player ID.");
@@ -470,6 +548,10 @@ bool World::requestInspection(int sourceId, int targetId) {
 bool World::requestPotion(int sourceId, int targetId, bool healing) {
     if (runningTurn || resolvingEvents) {
         throw std::logic_error("Special actions are only available between turns.");
+    }
+    if (isFinished()) {
+        reportEvent("Game finished. Make a player edit before requesting special actions.");
+        return false;
     }
     Player* source = findPlayer(sourceId);
     if (source == nullptr) {
@@ -513,7 +595,7 @@ void World::queueVote(int voterId, int targetId) {
 bool World::recordVote(int voterId, int targetId) {
     const Player* voter = findPlayer(voterId);
     const Player* target = findPlayer(targetId);
-    if (phase != DAY || voter == nullptr || target == nullptr || !target->isAlive()
+    if (isFinished() || phase != DAY || voter == nullptr || target == nullptr || !target->isAlive()
         || voterId == targetId) {
         return false;
     }
@@ -523,7 +605,13 @@ bool World::recordVote(int voterId, int targetId) {
         }
     }
     Ballot ballot = {voterId, targetId, voter->voteWeight()};
+    if (totalBallots == std::numeric_limits<long long>::max()
+        || totalVoteWeight > std::numeric_limits<long long>::max() - ballot.weight) {
+        throw std::overflow_error("The cumulative vote counter is full.");
+    }
     ballots.push_back(ballot);
+    ++totalBallots;
+    totalVoteWeight += ballot.weight;
     return true;
 }
 
@@ -564,13 +652,22 @@ void World::tallyVotes() {
 
 bool World::eliminate(int sourceId, int targetId, const std::string& cause, bool respectProtection) {
     Player* target = findPlayer(targetId);
-    if (target == nullptr || !target->isAlive()) {
+    if (isFinished() || target == nullptr || !target->isAlive()) {
         return false;
     }
     if (respectProtection && target->isProtected()) {
         reportEvent("Player " + std::to_string(targetId) + " survived " + cause + " (protected).");
         return false;
     }
+    if (killCount() == std::numeric_limits<int>::max()) {
+        throw std::length_error("The elimination history is full.");
+    }
+    const Player* source = findPlayer(sourceId);
+    const std::string sourceName = sourceId == 0 ? "Village vote"
+        : (source == nullptr ? "Unknown source" : source->getName());
+    KillRecord record = {sourceId, targetId, sourceName, target->getName(), cause,
+                         phase, runningTurn ? completedTurns + 1 : 0};
+    kills.push_back(record); // Allocate history before committing the actual death.
     target->setAlive(false); // Set this before the hook so repeated attacks cannot repeat it.
     target->onDeath(*this);
     reportEvent("Player " + std::to_string(targetId) + " died by " + cause

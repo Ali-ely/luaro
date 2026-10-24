@@ -137,7 +137,8 @@ void testNormalNightAndExpiry(Checks& checks) {
     world.createPlayer(VILLAGER_ROLE);
     world.createPlayer(WEREWOLF_ROLE);
     world.createPlayer(ALPHA_WOLF_ROLE);
-    checks.expect(world.runTurn() && world.livingPlayerCount() == 4,
+    world.createPlayer(VILLAGER_ROLE); // Avoid ending at parity before the expiry test.
+    checks.expect(world.runTurn() && world.livingPlayerCount() == 5,
                   "Witch self-healing resolves before both wolves' attacks");
     checks.expect(!world.findPlayer(1)->isProtected() && world.pendingEventCount() == 0,
                   "Night clears protection only after all queued effects resolve");
@@ -203,12 +204,17 @@ void testVoting(Checks& checks) {
     World tied(output);
     tied.createPlayer(VILLAGER_ROLE);
     tied.createPlayer(VILLAGER_ROLE);
-    tied.runTurns(2);
+    tied.runTurn();
+    // M9 ends wolf-free games after Night; an explicit edit reopens Day for tally tests.
+    tied.modifyPlayer(1, "Villager", true, false);
+    tied.runTurn();
     checks.expect(tied.ballotCount() == 2 && tied.voteTotal(1) == 1 && tied.voteTotal(2) == 1
                   && tied.livingPlayerCount() == 2, "Equal highest totals cause no elimination");
     World alone(output);
     alone.createPlayer(VILLAGER_ROLE);
-    alone.runTurns(2);
+    alone.runTurn();
+    alone.modifyPlayer(1, "Villager", true, false);
+    alone.runTurn();
     checks.expect(alone.ballotCount() == 0 && alone.livingPlayerCount() == 1,
                   "No eligible target produces no self-vote or elimination");
 
@@ -260,7 +266,9 @@ void testHunterReactions(Checks& checks) {
     day.createPlayer(HUNTER_ROLE);
     day.createPlayer(VILLAGER_ROLE);
     day.createPlayer(VILLAGER_ROLE);
-    day.runTurns(2);
+    day.runTurn();
+    day.modifyPlayer(1, "Hunter", true, false);
+    day.runTurn();
     checks.expect(!day.findPlayer(1)->isAlive() && !day.findPlayer(2)->isAlive()
                   && day.findPlayer(3)->isAlive() && day.pendingEventCount() == 0,
                   "Day tally resolves the eliminated Hunter's shot before changing phase");
@@ -362,6 +370,7 @@ void testManualValidationAndStress(Checks& checks) {
         for (int i = 0; i < 12; ++i) { simulation.createPlayer(roles[i % 6]); }
         checks.expect(simulation.runTurns(4) > 0 && simulation.pendingEventCount() == 0,
                       "Mixed-role turns drain events and death reactions");
+        simulation.modifyPlayer(4, "Fixture target", true, false); // Reopen if M9 ended the batch.
         simulation.enqueueEvent(new KillEvent(5, 4));
         simulation.removePlayer(4);
         simulation.processEvents();

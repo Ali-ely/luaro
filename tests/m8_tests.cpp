@@ -118,7 +118,7 @@ void testNumericInputAndMissingPlayers(Checks& checks) {
     world.createPlayer(VILLAGER_ROLE);
     world.clearUndoHistory();
     const std::string before = snapshot(world);
-    const char* invalid[] = {"", " \t", "abc", "14", "-1", "2147483648", "-2147483649",
+    const char* invalid[] = {"", " \t", "abc", "15", "-1", "2147483648", "-2147483649",
         "999999999999999999999999999999999999", "1 2", "2.5", "1e3", "+", "--1", "0x10"};
     std::ostringstream commands;
     for (const char* token : invalid) { commands << token << '\n'; }
@@ -127,7 +127,7 @@ void testNumericInputAndMissingPlayers(Checks& checks) {
     runConsole(world, output, commands.str());
     checks.expect(snapshot(world) == before && world.undoCount() == 0
                   && world.pendingEventCount() == 0, "Malformed and unknown IDs leave World unchanged");
-    checks.expect(occurrences(output.str(), "Enter one whole number from 0 to 13.") == 14,
+    checks.expect(occurrences(output.str(), "Enter one whole number from 0 to 14.") == 14,
                   "Menu rejects every malformed and out-of-range integer");
     checks.expect(occurrences(output.str(), "Unknown player ID.") == 5,
                   "All ID-based operations handle missing players safely");
@@ -186,11 +186,11 @@ void testTurnsAndEmptyWorld(Checks& checks) {
     checks.expect(world.getCompletedTurns() == 0, "Refused empty turns never advance phase");
     world.createPlayer(VILLAGER_ROLE);
     runConsole(world, output, "5\nabc\n\n0\n-1\n1001\n2147483647\n999999999999999999999\n2\n0\n");
-    checks.expect(world.getCompletedTurns() == 2 && world.getCompletedRounds() == 1,
-                  "Invalid turn counts reprompt before valid bounded batch");
+    checks.expect(world.getCompletedTurns() == 1 && world.getCompletedRounds() == 0,
+                  "Invalid turn counts reprompt, then M9 stops the batch at victory");
     runConsole(world, output, "5\n1000\n0\n");
-    checks.expect(world.getCompletedTurns() == 1002 && contains(output, "Completed 1000 turn(s)."),
-                  "Maximum console batch accepted and terminates");
+    checks.expect(world.getCompletedTurns() == 1 && contains(output, "Completed 0 turn(s)."),
+                  "Maximum console batch accepted but a finished game never advances");
     checks.expect(world.undoCount() == 0, "Menu turn batches clear editing history");
 }
 

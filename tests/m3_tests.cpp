@@ -208,10 +208,10 @@ void testRoleActionsAndTurnOrder(Checks& checks) {
     checks.expect(world.livingPlayerCount() == 5,
                   "All six act before M4 resolves the day elimination");
 
-    // A two-villager tie keeps the batch-counting test independent of eliminations.
+    // Keep enough village players that M9 victory cannot stop this seven-turn fixture.
     World batch(output);
-    batch.createPlayer(VILLAGER_ROLE);
-    batch.createPlayer(VILLAGER_ROLE);
+    for (int i = 0; i < 30; ++i) { batch.createPlayer(VILLAGER_ROLE); }
+    batch.createPlayer(WEREWOLF_ROLE);
     batch.runTurns(2);
     output.str("");
     checks.expect(batch.runTurns(5) == 5 && batch.getCompletedTurns() == 7
@@ -229,7 +229,10 @@ void testDeadAndRemovedPlayers(Checks& checks) {
     world.findPlayer(5)->setAlive(false);
     world.findPlayer(2)->setAlive(false);
     world.removePlayer(3);
-    checks.expect(world.runTurns(2) == 2, "Turns run with dead and removed players");
+    const bool nightRan = world.runTurn();
+    // M9 ends a wolf-free game after Night. An explicit edit reopens this phase fixture.
+    world.modifyPlayer(1, "Villager", true, false);
+    checks.expect(nightRan && world.runTurn(), "Turns run with dead and removed players");
     checks.expect(occurrences(output.str(), "  [5]") == 0
                   && occurrences(output.str(), "  [2]") == 0
                   && occurrences(output.str(), "  [3]") == 0,

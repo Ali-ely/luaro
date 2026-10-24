@@ -11,6 +11,7 @@
 #include <vector>
 
 enum Phase { NIGHT, DAY };
+enum GameResult { GAME_ONGOING, VILLAGE_WIN, WOLF_WIN, GAME_DRAW };
 
 class Command;
 class CreateCmd;
@@ -25,6 +26,17 @@ struct Ballot {
     int weight;
 };
 
+// Historical names and IDs survive later renaming or administrative deletion.
+struct KillRecord {
+    int sourceId;
+    int targetId;
+    std::string sourceName;
+    std::string targetName;
+    std::string cause;
+    Phase phase;
+    int turnNumber; // Zero marks low-level event processing between turns.
+};
+
 // Owns the village's players and runs phase-dependent actions polymorphically.
 // The output stream is borrowed and must outlive this World.
 class World {
@@ -37,17 +49,22 @@ private:
     int nextId;
     Phase phase;
     int completedTurns;
+    GameResult result;
+    long long totalBallots;
+    long long totalVoteWeight;
     bool runningTurn;
     bool resolvingEvents;
     Queue<Event*> events;
     Stack<Command*> history;
     std::vector<Ballot> ballots;
+    std::vector<KillRecord> kills;
     int packTargetId;
     std::ostream& output;
 
     void discardPendingEvents();
     void tallyVotes();
     void clearProtection();
+    void checkVictory();
     void discardHistory();
     void remember(Command* command);
     void eraseForUndo(int id);
@@ -82,6 +99,14 @@ public:
     Phase getPhase() const;
     int getCompletedTurns() const;
     int getCompletedRounds() const;
+    GameResult getResult() const;
+    bool isFinished() const;
+    const char* resultText() const;
+    long long getTotalBallots() const;
+    long long getTotalVoteWeight() const;
+    int killCount() const;
+    KillRecord killAt(int index) const;
+    void describeStatistics() const;
     bool runTurn();
     int runTurns(int numberOfTurns);
     void reportAction(const Player& player, const std::string& action);

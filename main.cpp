@@ -1,5 +1,5 @@
 /*
-Loup-Garou SimWorld - M8: complete console menu and safe input.
+Loup-Garou SimWorld - M9: victory detection and simulation statistics.
 Team members: names have not yet been supplied.
 World: a village simulation with alternating Night and Day turns.
 
@@ -14,12 +14,12 @@ F4: phase-dependent actions and event effects.
 F6: owned FIFO event queue and ordered healing.
 F7: identity-preserving snapshots and multi-level undo with exact list restoration.
 F10: deep copies, virtual destruction, and ownership of players, events, and command snapshots.
-F11: win detection and statistics are planned for M9.
+F11: victory/draw detection after resolution, cumulative ballots, and elimination history.
 The complete original numbered specification is needed to verify other labels.
 
 Build from the repository root (create build/ first):
 g++ -std=c++17 -Wall Player.cpp Teams.cpp Roles.cpp World.cpp Event.cpp Command.cpp Capabilities.cpp Console.cpp main.cpp -o build/simworld
-Tests: see README.md and tests/m1_tests.cpp through tests/m8_tests.cpp.
+Tests: see README.md and tests/m1_tests.cpp through tests/m9_tests.cpp.
 
 AI usage log:
 2026-10-23: Codex helped consolidate the supplied design, gaps, and course limits.
@@ -34,6 +34,7 @@ AI usage log:
 2026-10-24: User approved M6. Codex added undo commands, snapshot ownership, tests, and docs.
 2026-10-24: User approved M7. Codex added capability interfaces, checked casts, menu actions, and tests.
 2026-10-24: User approved M8. Codex added the Console class, validated prompts, details view, and menu tests.
+2026-10-24: User approved M9. Codex added game results, cumulative statistics, history records, and tests.
 */
 
 #include "Console.h"
@@ -82,7 +83,8 @@ int main(int argc, char* argv[]) {
             world.undo();
             world.undo(); // Safe empty-history demonstration.
             world.describePlayers();
-            std::istringstream demoInput("13\n2\n0\n");
+            world.runTurns(20); // Stops immediately when the fully resolved turn ends the game.
+            std::istringstream demoInput("14\n13\n2\n0\n");
             Console console(world, demoInput, std::cout);
             console.run();
         } else {
